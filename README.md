@@ -154,3 +154,16 @@ curl -X GET http://localhost:3000/api/stats
   }
 }
 ```
+
+---
+
+## Apa itu ORM? dan kenapa tidak menulis SQL manual?
+
+**ORM (Object-Relational Mapping)** adalah "penerjemah" yang menjembatani database PostgreSQL (bahasa SQL) dengan aplikasi Node.js/TypeScript (bahasa Object).
+
+## Kenapa Pakai ORM (Bukan SQL Manual)?
+
+1. **Lebih Cepat & Bersih:** Nulis operasi CRUD cukup pakai fungsi bawaan (misal: `jurnal.findMany()`), tidak perlu merangkai string SQL yang panjang.
+2. **Keamanan Ekstra (Anti SQL Injection):** Input dari *user* otomatis dibersihkan (*sanitize*) sebelum masuk ke database.
+3. **Type Safety & Auto-Complete:** Karena dibaca sebagai Object, editor (VS Code) akan memberikan *auto-complete* nama kolom tabel dan mendeteksi tipe data yang salah sebelum program dijalankan.
+4. **Kemudahan Migrasi:** Mengubah struktur tabel (nambah/hapus kolom) bisa dilakukan langsung dari kode tanpa perlu pusing merangkai perintah `ALTER TABLE`.
