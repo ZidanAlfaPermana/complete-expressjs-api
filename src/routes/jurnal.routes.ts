@@ -5,6 +5,7 @@ import { ValidationMiddleware, AuthMiddleware } from "../middlewares/index"
 const router = Router();
 
 router.get("/", JurnalController.getSemuaJurnal);
+router.get("/with_peserta", JurnalController.getJurnalDenganPeserta);
 router.get("/:id", JurnalController.getJurnalById);
 router.patch("/:id/review", JurnalController.updateStatusReview);
 router.post("/", ValidationMiddleware.validasiJurnal, JurnalController.buatJurnal);

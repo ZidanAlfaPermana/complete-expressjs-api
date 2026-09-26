@@ -31,6 +31,8 @@ export class InitialSchema1790213679565 implements MigrationInterface {
                 "kegiatan" varchar(100) NOT NULL,
                 "hambatan" varchar(100) NOT NULL,
                 "linkCommit" varchar(100),
+                "rencanaBesok" varchar(100),
+                "status" varchar DEFAULT 'belum',
                 "review" varchar DEFAULT 'belum',
                 "createdAt" TIMESTAMP DEFAULT now(),
                 "updatedAt" TIMESTAMP DEFAULT now()

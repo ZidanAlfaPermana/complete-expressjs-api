@@ -1,5 +1,6 @@
-import { Jurnal } from "../types";
-import { dataPeserta, dataJurnal } from "../data/dummy";
+import { JurnalRepository } from "../repositories";
+import { AppDataSource } from "../config/database.config";
+import { Peserta } from "../entities";
 
 interface JurnalFilter {
     idPeserta?: number;
@@ -15,116 +16,98 @@ interface JurnalBody {
     rencanaBesok: string;
     linkCommit?: string;
     review: "sudah" | "belum";
+    reviewerId: number;
 }
 
 export class JurnalService {
-    static async getSemuaJurnal(filters: JurnalFilter): Promise<Jurnal[]> {
-        let hasil = [...dataJurnal];
+    private jurnalRepo = new JurnalRepository();
+    private pesertaRepo = AppDataSource.getRepository(Peserta);
 
-        if (filters.idPeserta) {
-            hasil = hasil.filter((j) => j.idPeserta === filters.idPeserta);
-        }
+    async getSemuaJurnal(filters: JurnalFilter) {
+        const where: any = {};
 
-        if (filters.status) {
-            hasil = hasil.filter((j) => j.status === filters.status);
-        }
+        if (filters.idPeserta) where.pesertaId = filters.idPeserta;
+        if (filters.status) where.status = filters.status;
 
         const limit = filters.limit ?? 20;
-        return hasil.slice(0, limit);
+        return this.jurnalRepo.findWithFilters(where, limit);
     }
 
-    static async getTotalJurnal(): Promise<string> {
-        return String(dataJurnal.length);
+    async getTotalJurnal() {
+        const total = await this.jurnalRepo.count();
+        return String(total);
     }
 
-    static async getTotalJurnalBelumReview(): Promise<string> {
-        return String(dataJurnal.filter(d => d.review == "belum").length);
+    async getTotalJurnalBelumReview() {
+        const total = await this.jurnalRepo.countByReview("belum");
+        return String(total);
     }
 
-    static async updateStatusReview(id: number, review: "sudah" | "belum"): Promise<Jurnal | null> {
-        const index = dataJurnal.findIndex((j) => j.id === id);
+    async updateStatusReview(id: number, review: "sudah" | "belum") {
+        const jurnal = await this.jurnalRepo.findById(id);
+        if (!jurnal) return null;
 
-        if (index === -1) {
-            return null;
-        }
-
-        dataJurnal[index].review = review;
-        return dataJurnal[index];
+        jurnal.review = review;
+        return this.jurnalRepo.save(jurnal);
     }
 
-    static async getRataRataJurnalPeserta(): Promise<string> {
-        const totalJurnal = dataJurnal.length;
-        const totalPeserta = dataPeserta.length;
+    async getRataRataJurnalPeserta() {
+        const totalJurnal = await this.jurnalRepo.count();
+        const totalPeserta = await this.pesertaRepo.count();
+
         if (totalPeserta === 0) return "0";
 
         const rataRata = totalJurnal / totalPeserta;
-
         return rataRata.toFixed(2);
     }
 
-    static async getJurnalById(id: number): Promise<Jurnal | null> {
-        const jurnal = dataJurnal.find((j) => j.id === id);
-        return jurnal || null;
+    async getJurnalById(id: number) {
+        return this.jurnalRepo.findById(id);
     }
 
-    static async getJurnalByPesertaId(idPeserta: number): Promise<Jurnal[]> {
-        const jurnal = dataJurnal.filter((j) => j.idPeserta === idPeserta);
-        return jurnal;
+    async getJurnalByPesertaId(idPeserta: number) {
+        return this.jurnalRepo.findByPesertaId(idPeserta);
     }
 
-    static async buatJurnal(data: JurnalBody): Promise<Jurnal> {
-        const pesertaExists = dataPeserta.find((p) => p.id === data.idPeserta);
+    async getJurnalDenganPeserta() {
+        return this.jurnalRepo.getJurnalDenganPeserta();
+    }
+
+    async buatJurnal(data: JurnalBody) {
+        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.idPeserta });
         if (!pesertaExists) {
             throw new Error(`Peserta dengan id ${data.idPeserta} tidak ditemukan`);
         }
 
-        const newId = Math.max(...dataJurnal.map((j) => j.id), 0) + 1;
-
-        const jurnalBaru: Jurnal = {
-            id: newId,
-            idPeserta: data.idPeserta,
+        return this.jurnalRepo.save({
+            pesertaId: data.idPeserta,
             status: data.status,
             kegiatan: data.kegiatan,
-            hambatan: data.hambatan || "",
+            hambatan: data.hambatan,
             rencanaBesok: data.rencanaBesok,
             linkCommit: data.linkCommit,
-            review: data.review
-        };
-
-        dataJurnal.push(jurnalBaru);
-        return jurnalBaru;
+            review: data.review,
+            reviewerId: data.reviewerId
+        });
     }
 
-    static async updateJurnal(id: number, data: JurnalBody): Promise<Jurnal | null> {
-        const index = dataJurnal.findIndex((j) => j.id === id);
+    async updateJurnal(id: number, data: JurnalBody) {
+        const jurnal = await this.jurnalRepo.findById(id);
+        if (!jurnal) return null;
 
-        if (index === -1) {
-            return null;
-        }
-
-        const pesertaExists = dataPeserta.find((p) => p.id === data.idPeserta);
+        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.idPeserta });
         if (!pesertaExists) {
             throw new Error(`Peserta dengan id ${data.idPeserta} tidak ditemukan`);
         }
 
-        const jurnalUpdated: Jurnal = {
-            ...dataJurnal[index],
-            ...data,
-            id
-        };
-
-        dataJurnal[index] = jurnalUpdated;
-        return jurnalUpdated;
+        return this.jurnalRepo.save({
+            ...jurnal,
+            ...data
+        });
     }
 
-    static async hapusJurnal(id: number): Promise<boolean> {
-        const index = dataJurnal.findIndex((j) => j.id === id);
-
-        if (index === -1) {
-            return false;
-        }
-
-        dataJurnal.splice(index, 1);
-        return true;
+    async hapusJurnal(id: number) {
+        const result = await this.jurnalRepo.delete(id);
+        return (result.affected ?? 0) > 0;
     }
 }
