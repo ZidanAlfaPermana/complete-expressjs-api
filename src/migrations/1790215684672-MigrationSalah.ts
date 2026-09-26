@@ -3,14 +3,14 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class MigrationSalah1790215684672 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        queryRunner.query(`
+        /*queryRunner.query(`
             CREATE TABLE "salah"
             (
                 "id" SERIAL PRIMARY KEY,
                 "nama" varc(100) NOT NULL,
                 "email" nomor(100) UNIQUE NOT NULL
             )
-        `)
+        `)*/
     }
 
     /*

@@ -1,12 +1,39 @@
-import {Jurnal} from "../types";
-import {Repository} from "./base.repository";
+import { AppDataSource } from "../config/database.config";
+import { JurnalHarian } from "../entities";
+import { FindOptionsWhere } from "typeorm";
 
-export class JurnalRepository extends Repository<Jurnal> {
-    findByStatus(status: string): Jurnal[] {
-        return this.findAll().filter((item) => item.status === status);
+export class JurnalRepository {
+    private repo = AppDataSource.getRepository(JurnalHarian);
+
+    async findWithFilters(where: FindOptionsWhere<JurnalHarian>, limit: number) {
+        return this.repo.find({ where, take: limit });
     }
 
-    findByIdPeserta(idPeserta: number): Jurnal[] {
-        return this.findAll().filter((item) => item.idPeserta === idPeserta);
+    async count() {
+        return this.repo.count();
+    }
+
+    async countByReview(review: "sudah" | "belum") {
+        return this.repo.count({ where: { review } });
+    }
+
+    async findById(id: number) {
+        return this.repo.findOneBy({ id });
+    }
+
+    async findByPesertaId(pesertaId: number) {
+        return this.repo.find({ where: { pesertaId } });
+    }
+
+    async getJurnalDenganPeserta() {
+        return this.repo.find({ relations: { peserta: true } });
+    }
+
+    async save(data: Partial<JurnalHarian>) {
+        return this.repo.save(data);
+    }
+
+    async delete(id: number) {
+        return this.repo.delete(id);
     }
 }

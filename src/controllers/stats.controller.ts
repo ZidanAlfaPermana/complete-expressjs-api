@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 
+const jurnalService = new JurnalService();
+
 export const getStats = asyncHandler(async (req: Request, res: Response) => {
     const [
         total_peserta,
@@ -9,10 +11,10 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
         total_belum_direview,
         rata_rata_jurnal_persiswa
     ] = await Promise.all([
-        PesertaService.getTotalPeserta(),
-        JurnalService.getTotalJurnal(),
-        JurnalService.getTotalJurnalBelumReview(),
-        JurnalService.getRataRataJurnalPeserta()
+        new PesertaService().getTotalPeserta(),
+        jurnalService.getTotalJurnal(),
+        jurnalService.getTotalJurnalBelumReview(),
+        jurnalService.getRataRataJurnalPeserta()
     ]);
     const data = {
         total_peserta,

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { JurnalService } from "../services";
+import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 
 interface JurnalBody {
@@ -9,13 +9,17 @@ interface JurnalBody {
     hambatan?: string;
     rencanaBesok: string;
     linkCommit?: string;
-    review: "sudah" | "belum"
+    review: "sudah" | "belum";
+    reviewerId: number;
 }
+
+const jurnalService = new JurnalService();
+const pesertaService = new PesertaService();
 
 export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) => {
     const { peserta, status, limit } = req.query;
 
-    const data = await JurnalService.getSemuaJurnal({
+    const data = await jurnalService.getSemuaJurnal({
         idPeserta: peserta ? Number(peserta) : undefined,
         status: status as any,
         limit: limit ? Number(limit) : 20
@@ -26,7 +30,7 @@ export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) =
 
 export const getJurnalById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const jurnal = await JurnalService.getJurnalById(id);
+    const jurnal = await jurnalService.getJurnalById(id);
 
     if (!jurnal) {
         res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
@@ -38,9 +42,9 @@ export const getJurnalById = asyncHandler(async (req: Request, res: Response) =>
 
 export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const jurnal = await JurnalService.getJurnalByPesertaId(id);
+    const jurnal = await pesertaService.getPesertaDenganJurnal(id);
 
-    if (!jurnal || jurnal.length === 0) {
+    if (!jurnal || typeof jurnal === null ) {
         res.status(404).json({ error: `Jurnal dengan Peserta id ${id} tidak ditemukan` });
         return;
     }
@@ -48,11 +52,18 @@ export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Respo
     res.json(jurnal);
 });
 
+export const getJurnalDenganPeserta = asyncHandler(async (req: Request, res: Response) => {
+    const jurnal = await jurnalService.getJurnalDenganPeserta();
+
+    res.json({ total: jurnal.length, jurnal });
+});
+
+
 export const updateStatusReview = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const { review } = req.body;
 
-    const jurnalUpdated = await JurnalService.updateStatusReview(id, review);
+    const jurnalUpdated = await jurnalService.updateStatusReview(id, review);
 
     if (!jurnalUpdated) {
         res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
@@ -63,13 +74,13 @@ export const updateStatusReview = asyncHandler(async (req: Request, res: Respons
 });
 
 export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const jurnalBaru = await JurnalService.buatJurnal(req.body as JurnalBody);
+    const jurnalBaru = await jurnalService.buatJurnal(req.body as JurnalBody);
     res.status(201).json(jurnalBaru);
 });
 
 export const updateJurnal = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const jurnalUpdated = await JurnalService.updateJurnal(id, req.body as JurnalBody);
+    const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody);
 
     if (!jurnalUpdated) {
         res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
@@ -81,7 +92,7 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
 
 export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const deleted = await JurnalService.hapusJurnal(id);
+    const deleted = await jurnalService.hapusJurnal(id);
 
     if (!deleted) {
         res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });

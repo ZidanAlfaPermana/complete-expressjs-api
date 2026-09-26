@@ -1,5 +1,5 @@
-import { Peserta } from "../types";
-import { dataPeserta } from "../data/dummy";
+import { PesertaRepository } from "../repositories";
+import {Skill} from "../entities";
 
 interface PesertaFilter {
     sekolah?: string;
@@ -9,101 +9,80 @@ interface PesertaFilter {
 
 interface PesertaBody {
     nama: string;
-    kelas: string;
-    jurusan: string;
+    email: string;
     sekolah: string;
     fase: number;
+    skillIds?: number[];
 }
 
 export class PesertaService {
-    static async getSemuaPeserta(filters: PesertaFilter): Promise<Peserta[]> {
-        let hasil = [...dataPeserta];
+    private pesertaRepo = new PesertaRepository();
 
-        if (filters.sekolah) {
-            hasil = hasil.filter((p) => p.sekolah === filters.sekolah);
-        }
+    async getSemuaPeserta(filters: PesertaFilter) {
+        const where: any = {};
 
-        if (filters.fase) {
-            hasil = hasil.filter((p) => p.fase === filters.fase);
-        }
+        if (filters.sekolah) where.sekolah = filters.sekolah;
+        if (filters.fase) where.fase = filters.fase;
 
         const limit = filters.limit ?? 20;
-        return hasil.slice(0, limit);
+        return this.pesertaRepo.findWithFilters(where, limit);
     }
 
-    static async getTotalPeserta(): Promise<string> {
-        return String(dataPeserta.length);
+    async getTotalPeserta() {
+        const total = await this.pesertaRepo.count();
+        return String(total);
     }
 
-    static async getPesertaById(id: number): Promise<Peserta | null> {
-        const peserta = dataPeserta.find((p) => p.id === id);
-        return peserta || null;
+    async getPesertaById(id: number) {
+        return this.pesertaRepo.findById(id);
     }
 
-    static async buatPeserta(data: PesertaBody): Promise<Peserta> {
-        const isDuplikat = dataPeserta.find(
-            (p) => p.nama.toLowerCase() === data.nama.toLowerCase() && p.sekolah === data.sekolah
-        );
+    async getPesertaDenganJurnal(id: number) {
+        return this.pesertaRepo.getPesertaDenganJurnal(id)
+    }
+
+    async buatPeserta(data: PesertaBody) {
+        const isDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
 
         if (isDuplikat) {
-            throw new Error(
-                `Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`
-            );
+            throw new Error(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
         }
 
-        const newId = Math.max(...dataPeserta.map((p) => p.id), 0) + 1;
+        const skills = data.skillIds ? data.skillIds.map(id => ({ id } as Skill)) : [];
 
-        const pesertaBaru: Peserta = {
-            id: newId,
+        return this.pesertaRepo.save({
             nama: data.nama,
-            kelas: data.kelas,
-            jurusan: data.jurusan,
+            email: data.email,
             sekolah: data.sekolah,
-            fase: data.fase
-        };
-
-        dataPeserta.push(pesertaBaru);
-        return pesertaBaru;
+            fase: data.fase,
+            skills: skills
+        });
     }
 
-    static async updatePeserta(id: number, data: PesertaBody): Promise<Peserta | null> {
-        const index = dataPeserta.findIndex((p) => p.id === id);
+    async updatePeserta(id: number, data: PesertaBody) {
+        const peserta = await this.pesertaRepo.findById(id);
+        if (!peserta) return null;
 
-        if (index === -1) {
-            return null;
+        const isDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
+
+        if (isDuplikat && isDuplikat.id !== id) {
+            throw new Error(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
         }
 
-        const isDuplikat = dataPeserta.find(
-            (p) =>
-                p.id !== id &&
-                p.nama.toLowerCase() === data.nama.toLowerCase() &&
-                p.sekolah === data.sekolah
-        );
+        const skills = data.skillIds ? data.skillIds.map(skillId => ({ id: skillId } as Skill)) : peserta.skills;
 
-        if (isDuplikat) {
-            throw new Error(
-                `Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`
-            );
-        }
-
-        const pesertaUpdated: Peserta = {
-            ...dataPeserta[index],
-            ...data,
-            id
-        };
-
-        dataPeserta[index] = pesertaUpdated;
-        return pesertaUpdated;
+        return this.pesertaRepo.save({
+            ...peserta,
+            nama: data.nama,
+            email: data.email,
+            sekolah: data.sekolah,
+            fase: data.fase,
+            skills: skills
+        });
     }
 
-    static async hapusPeserta(id: number): Promise<boolean> {
-        const index = dataPeserta.findIndex((p) => p.id === id);
-
-        if (index === -1) {
-            return false;
-        }
-
-        dataPeserta.splice(index, 1);
-        return true;
+    async hapusPeserta(id: number) {
+        const result = await this.pesertaRepo.delete(id);
+        return (result.affected ?? 0) > 0;
     }
 }

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { config } from "./env.config";
-import { Peserta, JurnalHarian, Mentor } from "../entities";
+import { Peserta, JurnalHarian, Mentor, Skill } from "../entities";
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -12,6 +12,6 @@ export const AppDataSource = new DataSource({
     database: config.db.name,
     synchronize: false,
     logging: config.app.env === "development",
-    entities: [Peserta, JurnalHarian, Mentor],
+    entities: [Peserta, JurnalHarian, Mentor, Skill],
     migrations: ["src/migrations/**/*.ts"],
 });
