@@ -3,7 +3,7 @@ import {Skill} from "../entities";
 import {MentorRepository, SkillRepository} from "../repositories";
 
 export async function validasiPeserta(req: Request, res: Response, next: NextFunction) {
-    const { nama, sekolah, skillIds, fase } = req.body;
+    const { nama, sekolah, email, skillIds, fase, status, telepon } = req.body;
     const errors: string[] = [];
 
     if (!nama || typeof nama !== "string" || nama.trim().length < 3) {
@@ -12,6 +12,19 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
 
     if (!sekolah || typeof sekolah !== "string") {
         errors.push("Sekolah wajib diisi");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || !emailRegex.test(email)) {
+        errors.push("Email wajib diisi dan formatnya harus valid (contoh: mentor@gmail.com)");
+    }
+
+    if (!status || !["selesai", "proses", "belum"].includes(status)) {
+        errors.push("Status tidak valid. harus berisi selesai, proses, atau belum")
+    }
+
+    if (!telepon || typeof telepon !== "string") {
+        errors.push("Telepon wajib diisi, tidak boleh kosong")
     }
 
     if (!fase || typeof fase !== "number" || (fase < 1 || fase > 5)) {
@@ -92,7 +105,7 @@ export async function validasiJurnal(req: Request, res: Response, next: NextFunc
 }
 
 export function validasiMentor(req: Request, res: Response, next: NextFunction): void {
-    const { nama, email, spesialisasi } = req.body;
+    const { nama, email, keahlian } = req.body;
     const errors: string[] = [];
 
     if (!nama || typeof nama !== "string" || nama.trim().length < 3) {
@@ -104,8 +117,8 @@ export function validasiMentor(req: Request, res: Response, next: NextFunction):
         errors.push("Email wajib diisi dan formatnya harus valid (contoh: mentor@gmail.com)");
     }
 
-    if (spesialisasi !== undefined && typeof spesialisasi !== "string") {
-        errors.push("Spesialisasi harus berupa teks");
+    if (keahlian !== undefined && !Array.isArray(keahlian)) {
+        errors.push("Keahlian harus berupa array");
     }
 
     if (errors.length > 0) {

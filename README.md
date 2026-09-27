@@ -167,3 +167,26 @@ curl -X GET http://localhost:3000/api/stats
 2. **Keamanan Ekstra (Anti SQL Injection):** Input dari *user* otomatis dibersihkan (*sanitize*) sebelum masuk ke database.
 3. **Type Safety & Auto-Complete:** Karena dibaca sebagai Object, editor (VS Code) akan memberikan *auto-complete* nama kolom tabel dan mendeteksi tipe data yang salah sebelum program dijalankan.
 4. **Kemudahan Migrasi:** Mengubah struktur tabel (nambah/hapus kolom) bisa dilakukan langsung dari kode tanpa perlu pusing merangkai perintah `ALTER TABLE`.
+
+---
+
+## Cara setup Project dan Database dari nol sampai running
+
+1. buka PgAdmin4, jika blm ada postgres admin/database nya bisa di dowload di: https://www.pgadmin.org/download/ dan pilih versi yang terbaru
+2. buat database dengan nama `magang_db`
+3. lalu clone project ini: 
+```bash
+git clone https://github.com/ZidanAlfaPermana/complete-expressjs-api.git
+```
+4. jalankan cmd ini untuk menginstall package yang diperlukan di project ini:
+```bash
+npm install
+```
+5. lalu jalankan cmd ini untuk migrasi database:
+```bash
+npm run migration:run
+```
+6. jika sudah menjalankan migrasi lalu jalankan project API ini:
+```bash
+npm run dev 
+```

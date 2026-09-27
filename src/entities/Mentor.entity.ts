@@ -12,8 +12,8 @@ export class Mentor {
     @Column({ type: "varchar", length: 100, unique: true })
     email!: string;
 
-    @Column({ type: "varchar", length: 100, nullable: true })
-    spesialisasi?: string; // Contoh: "Backend", "Frontend", "UI/UX"
+    @Column({ type: "jsonb", default: [] })
+    keahlian?: string[]; // Contoh: "Backend", "Frontend", "UI/UX"
 
     @CreateDateColumn()
     createdAt!: Date;

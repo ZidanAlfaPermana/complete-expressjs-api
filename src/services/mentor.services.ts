@@ -3,7 +3,7 @@ import { MentorRepository } from "../repositories";
 interface MentorBody {
     nama: string;
     email: string;
-    spesialisasi?: string;
+    keahlian?: string | string[];
 }
 
 export class MentorService {
@@ -18,16 +18,32 @@ export class MentorService {
     }
 
     async buatMentor(data: MentorBody) {
-        return this.mentorRepo.save(data);
+        const keahlianArray = Array.isArray(data.keahlian)
+            ? data.keahlian
+            : data.keahlian
+                ? [data.keahlian]
+                : [];
+
+        return this.mentorRepo.save({
+            nama: data.nama,
+            email: data.email,
+            keahlian: keahlianArray
+        });
     }
 
     async updateMentor(id: number, data: MentorBody) {
         const mentor = await this.mentorRepo.findById(id);
         if (!mentor) return null;
 
+        const keahlianArray = data.keahlian !== undefined
+            ? (Array.isArray(data.keahlian) ? data.keahlian : [data.keahlian])
+            : mentor.keahlian;
+
         return this.mentorRepo.save({
             ...mentor,
-            ...data
+            nama: data.nama,
+            email: data.email,
+            keahlian: keahlianArray
         });
     }
 
