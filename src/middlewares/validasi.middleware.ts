@@ -3,7 +3,7 @@ import {Skill} from "../entities";
 import {MentorRepository, SkillRepository} from "../repositories";
 
 export async function validasiPeserta(req: Request, res: Response, next: NextFunction) {
-    const { nama, sekolah, email, skillIds, fase, status, telepon } = req.body;
+    const { nama, sekolah, email, skillIds, fase, status, telepon, role, password } = req.body;
     const errors: string[] = [];
 
     if (!nama || typeof nama !== "string" || nama.trim().length < 3) {
@@ -19,8 +19,8 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
         errors.push("Email wajib diisi dan formatnya harus valid (contoh: mentor@gmail.com)");
     }
 
-    if (!status || !["selesai", "proses", "belum"].includes(status)) {
-        errors.push("Status tidak valid. harus berisi selesai, proses, atau belum")
+    if (!status || !["aktif", "lulus", "berhenti"].includes(status)) {
+        errors.push("Status tidak valid. harus berisi aktif, lulus, atau berhenti")
     }
 
     if (!telepon || typeof telepon !== "string") {
@@ -44,6 +44,18 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
         }
     }
 
+    if (!role || !["peserta", "mentor"].includes(role)) {
+        errors.push("Role wajib diisi, dengan memilih role peserta atau mentor")
+    }
+
+    if (!password && typeof password !== "string") {
+        errors.push("Password harus diisi, tidak boleh kosong")
+    }
+
+    if (password.length < 3) {
+        errors.push("Password harus lebih dari 3 kata")
+    }
+
     if (errors.length > 0) {
         res.status(400).json({ error: "Validasi gagal", detail: errors });
         return;
@@ -53,7 +65,7 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
 }
 
 export async function validasiJurnal(req: Request, res: Response, next: NextFunction) {
-    const { idPeserta, status, kegiatan, hambatan, rencanaBesok, linkCommit, review, reviewerId } = req.body;
+    const { idPeserta, status, kegiatan, hambatan, rencanaBesok, linkCommit, review, reviewerId} = req.body;
     const errors: string[] = [];
 
     if (hambatan && typeof hambatan !== "string") {

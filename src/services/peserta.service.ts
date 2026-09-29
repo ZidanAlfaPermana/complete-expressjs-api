@@ -1,5 +1,6 @@
 import { PesertaRepository } from "../repositories";
 import {Skill} from "../entities";
+import {hashPassword} from "../utils/password";
 
 interface PesertaFilter {
     sekolah?: string;
@@ -10,8 +11,11 @@ interface PesertaFilter {
 interface PesertaBody {
     nama: string;
     email: string;
+    password: string;
+    status: "aktif" | "berhenti" | "lulus";
     sekolah: string;
     fase: number;
+    role: 'peserta' | 'mentor';
     skillIds?: number[];
 }
 
@@ -50,11 +54,15 @@ export class PesertaService {
 
         const skills = data.skillIds ? data.skillIds.map(id => ({ id } as Skill)) : [];
 
+        const hashed = await hashPassword(data.password);
+
         return this.pesertaRepo.save({
             nama: data.nama,
             email: data.email,
+            password: hashed,
             sekolah: data.sekolah,
             fase: data.fase,
+            role: data.role,
             skills: skills
         });
     }
@@ -71,12 +79,16 @@ export class PesertaService {
 
         const skills = data.skillIds ? data.skillIds.map(skillId => ({ id: skillId } as Skill)) : peserta.skills;
 
+        const hashed = await hashPassword(data.password);
+
         return this.pesertaRepo.save({
             ...peserta,
             nama: data.nama,
             email: data.email,
+            password: hashed,
             sekolah: data.sekolah,
             fase: data.fase,
+            role: data.role,
             skills: skills
         });
     }

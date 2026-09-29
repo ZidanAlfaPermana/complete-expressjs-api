@@ -5,9 +5,10 @@ import { asyncHandler } from "../utils/asyncHandler";
 interface PesertaBody {
     nama: string;
     email: string;
-    kelas: string;
-    jurusan: string;
+    password: string;
+    status: "aktif" | "berhenti" | "lulus";
     sekolah: string;
+    role: "peserta" | "mentor"
     fase: number;
 }
 

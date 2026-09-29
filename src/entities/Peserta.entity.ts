@@ -32,6 +32,12 @@ export class Peserta {
     @Column({ type: "enum", enum: ["aktif", "lulus", "berhenti"], default: "aktif" })
     status!: StatusPeserta;
 
+    @Column({ type: "varchar" })
+    password!: string;   // ini SELALU berisi hash, tidak pernah plaintext
+
+    @Column({ type: "varchar", default: "peserta" })
+    role!: "peserta" | "mentor";   // dipakai untuk RBAC di hari Kamis
+
     @CreateDateColumn()
     createdAt!: Date;
 
