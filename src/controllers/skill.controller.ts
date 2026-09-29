@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { SkillService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
+import { response } from "../utils";
 
 const skillService = new SkillService();
 
 export const getSemuaSkill = asyncHandler(async (req: Request, res: Response) => {
     const data = await skillService.getSemuaSkill();
-    res.json({ total: data.length, data });
+    response.suksesDenganTotal(res, data);
 });
 
 export const getSkillById = asyncHandler(async (req: Request, res: Response) => {
@@ -14,16 +15,16 @@ export const getSkillById = asyncHandler(async (req: Request, res: Response) => 
     const skill = await skillService.getSkillById(id);
 
     if (!skill) {
-        res.status(404).json({ error: `Skill dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.json(skill);
+    response.sukses(res, skill);
 });
 
 export const buatSkill = asyncHandler(async (req: Request, res: Response) => {
     const skillBaru = await skillService.buatSkill(req.body);
-    res.status(201).json(skillBaru);
+    response.dibuat(res, skillBaru);
 });
 
 export const updateSkill = asyncHandler(async (req: Request, res: Response) => {
@@ -31,11 +32,11 @@ export const updateSkill = asyncHandler(async (req: Request, res: Response) => {
     const skillUpdated = await skillService.updateSkill(id, req.body);
 
     if (!skillUpdated) {
-        res.status(404).json({ error: `Skill dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(200).json({ message: `Skill dengan id ${id} berhasil di edit`, data: skillUpdated });
+    response.diubah(res, skillUpdated, `Skill dengan id ${id} berhasil di edit`);
 });
 
 export const hapusSkill = asyncHandler(async (req: Request, res: Response) => {
@@ -43,9 +44,9 @@ export const hapusSkill = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await skillService.hapusSkill(id);
 
     if (!deleted) {
-        res.status(404).json({ error: `Skill dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(204).send();
+    response.sukses(res, [], "Data berhasil dihapus", 204);
 });

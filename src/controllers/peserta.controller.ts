@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PesertaService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
+import { response } from "../utils";
 
 interface PesertaBody {
     nama: string;
@@ -23,7 +24,7 @@ export const getSemuaPeserta = asyncHandler(async (req: Request, res: Response) 
         limit: limit ? Number(limit) : 20
     });
 
-    res.json({ total: data.length, data });
+    response.suksesDenganTotal(res, data);
 });
 
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {
@@ -31,16 +32,16 @@ export const getPesertaById = asyncHandler(async (req: Request, res: Response) =
     const peserta = await pesertaService.getPesertaById(id);
 
     if (!peserta) {
-        res.status(404).json({ error: `Peserta dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.json(peserta);
+    response.sukses(res, peserta);
 });
 
 export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>, res: Response) => {
     const pesertaBaru = await pesertaService.buatPeserta(req.body);
-    res.status(201).json(pesertaBaru);
+    response.dibuat(res, pesertaBaru);
 });
 
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -48,11 +49,11 @@ export const updatePeserta = asyncHandler(async (req: Request, res: Response) =>
     const pesertaUpdated = await pesertaService.updatePeserta(id, req.body as PesertaBody);
 
     if (!pesertaUpdated) {
-        res.status(404).json({ error: `Peserta dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(200).json({ message: `Peserta dengan id ${id} berhasil di edit`, data: pesertaUpdated });
+    response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
 });
 
 export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -60,9 +61,9 @@ export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => 
     const deleted = await pesertaService.hapusPeserta(id);
 
     if (!deleted) {
-        res.status(404).json({ error: `Peserta dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(204).send();
+    response.sukses(res, [], "Data berhasil dihapus", 204);
 });

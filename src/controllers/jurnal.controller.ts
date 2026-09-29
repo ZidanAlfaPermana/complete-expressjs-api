@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
+import {response} from "../utils";
 
 interface JurnalBody {
     idPeserta: number;
@@ -25,7 +26,7 @@ export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) =
         limit: limit ? Number(limit) : 20
     });
 
-    res.json({ total: data.length, data });
+    response.suksesDenganTotal(res, data);
 });
 
 export const getJurnalById = asyncHandler(async (req: Request, res: Response) => {
@@ -37,7 +38,7 @@ export const getJurnalById = asyncHandler(async (req: Request, res: Response) =>
         return;
     }
 
-    res.json(jurnal);
+    response.sukses(res, jurnal)
 });
 
 export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Response) => {
@@ -49,13 +50,13 @@ export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Respo
         return;
     }
 
-    res.json(jurnal);
+    response.sukses(res, jurnal)
 });
 
 export const getJurnalDenganPeserta = asyncHandler(async (req: Request, res: Response) => {
     const jurnal = await jurnalService.getJurnalDenganPeserta();
 
-    res.json({ total: jurnal.length, jurnal });
+    response.suksesDenganTotal(res, jurnal)
 });
 
 
@@ -66,16 +67,16 @@ export const updateStatusReview = asyncHandler(async (req: Request, res: Respons
     const jurnalUpdated = await jurnalService.updateStatusReview(id, review);
 
     if (!jurnalUpdated) {
-        res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
         return;
     }
 
-    res.status(200).json({ message: `Status review jurnal dengan id ${id} berhasil diubah`, data: jurnalUpdated });
+    response.diubah(res, jurnalUpdated)
 });
 
 export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
     const jurnalBaru = await jurnalService.buatJurnal(req.body as JurnalBody);
-    res.status(201).json(jurnalBaru);
+    response.dibuat(res, jurnalBaru);
 });
 
 export const updateJurnal = asyncHandler(async (req: Request, res: Response) => {
@@ -83,11 +84,11 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
     const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody);
 
     if (!jurnalUpdated) {
-        res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
         return;
     }
 
-    res.status(200).json({ message: `Jurnal dengan id ${id} berhasil di edit`, data: jurnalUpdated });
+    response.diubah(res, jurnalUpdated, `Jurnal dengan id ${id} berhasil di edit`)
 });
 
 export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
@@ -95,9 +96,9 @@ export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await jurnalService.hapusJurnal(id);
 
     if (!deleted) {
-        res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
+        response.gagal(res,`Jurnal dengan id ${id} tidak ditemukan`, [], 404)
         return;
     }
 
-    res.status(204).send();
+    response.sukses(res, [], 'data berhasil dihapus', 204)
 });

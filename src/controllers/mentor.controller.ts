@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { MentorService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
+import { response } from "../utils";
 
 const mentorService = new MentorService();
 
 export const getSemuaMentor = asyncHandler(async (req: Request, res: Response) => {
     const data = await mentorService.getSemuaMentor();
-    res.json({ total: data.length, data });
+    response.suksesDenganTotal(res, data);
 });
 
 export const getMentorById = asyncHandler(async (req: Request, res: Response) => {
@@ -14,16 +15,16 @@ export const getMentorById = asyncHandler(async (req: Request, res: Response) =>
     const mentor = await mentorService.getMentorById(id);
 
     if (!mentor) {
-        res.status(404).json({ error: `Mentor dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.json(mentor);
+    response.sukses(res, mentor);
 });
 
 export const buatMentor = asyncHandler(async (req: Request, res: Response) => {
     const mentorBaru = await mentorService.buatMentor(req.body);
-    res.status(201).json(mentorBaru);
+    response.dibuat(res, mentorBaru);
 });
 
 export const updateMentor = asyncHandler(async (req: Request, res: Response) => {
@@ -31,11 +32,11 @@ export const updateMentor = asyncHandler(async (req: Request, res: Response) => 
     const mentorUpdated = await mentorService.updateMentor(id, req.body);
 
     if (!mentorUpdated) {
-        res.status(404).json({ error: `Mentor dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(200).json({ message: `Mentor dengan id ${id} berhasil di edit`, data: mentorUpdated });
+    response.diubah(res, mentorUpdated, `Mentor dengan id ${id} berhasil di edit`);
 });
 
 export const hapusMentor = asyncHandler(async (req: Request, res: Response) => {
@@ -43,9 +44,9 @@ export const hapusMentor = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await mentorService.hapusMentor(id);
 
     if (!deleted) {
-        res.status(404).json({ error: `Mentor dengan id ${id} tidak ditemukan` });
+        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    res.status(204).send();
+    response.sukses(res, [], "Data berhasil dihapus", 204);
 });

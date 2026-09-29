@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import {Peserta} from "../entities";
 import {AppDataSource} from "../config/database.config";
+import { response } from "../utils";
 
 export const getStats = asyncHandler(async (req: Request, res: Response) => {
     const result = await AppDataSource.getRepository(Peserta)
@@ -26,5 +27,5 @@ export const getStats = asyncHandler(async (req: Request, res: Response) => {
         rata_rata_jurnal_persiswa
     };
 
-    res.json({ data });
+    response.sukses(res, data, "data stats berhasil diambil")
 });
