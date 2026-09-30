@@ -31,5 +31,5 @@ export function diubah<T>(res: Response, data: T, pesan: string = "Data berhasil
 }
 
 export function gagal<T>(res: Response, pesan: string = "Data gagal diproses", errors: T[], code: number = 500): void {
-    res.status(code).json({ sukses: false, pesan });
+    res.status(code).json({ sukses: false, pesan, errors });
 }

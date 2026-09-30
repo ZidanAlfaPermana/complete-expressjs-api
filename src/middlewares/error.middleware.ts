@@ -4,11 +4,19 @@ import {AppError, ConflictError, NotFoundError, UnauthorizedError, ValidationErr
 const isDev = process.env.NODE_ENV === "development";
 
 export function errorHandler(
-    err: Error,
+    err: any,
     req: Request,
     res: Response,
     next: NextFunction
 ): void {
+    if (err.isOperational) {
+        res.status(err.statusCode).json({
+            sukses: false,
+            pesan: err.message, // Menampilkan "Email atau password salah"
+            errors: []
+        });
+        return;
+    }
 
     if (err instanceof AppError) {
         res.status(err.statusCode).json({

@@ -52,7 +52,7 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
         errors.push("Password harus diisi, tidak boleh kosong")
     }
 
-    if (password.length < 3) {
+    if (String(password).length < 3) {
         errors.push("Password harus lebih dari 3 kata")
     }
 
@@ -147,6 +147,64 @@ export function validasiSkill(req: Request, res: Response, next: NextFunction): 
 
     if (!nama || typeof nama !== "string" || nama.trim().length < 2) {
         errors.push("Nama skill wajib diisi, minimal 2 karakter");
+    }
+
+    if (errors.length > 0) {
+        res.status(400).json({ error: "Validasi gagal", detail: errors });
+        return;
+    }
+
+    next();
+}
+
+export function validasiRegister(req: Request, res: Response, next: NextFunction): void {
+    const { nama, sekolah, email, password } = req.body;
+    const errors: string[] = [];
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || !emailRegex.test(email)) {
+        errors.push("Email wajib diisi dan formatnya harus valid (contoh: mentor@gmail.com)");
+    }
+
+    if (!nama || typeof nama !== "string" || nama.trim().length < 3) {
+        errors.push("Nama wajib diisi, minimal 3 karakter");
+    }
+
+    if (!sekolah || typeof sekolah !== "string") {
+        errors.push("Sekolah wajib diisi");
+    }
+
+    if (!password && typeof password !== "string") {
+        errors.push("Password harus diisi, tidak boleh kosong")
+    }
+
+    if (String(password).length < 8) {
+        errors.push("Password harus lebih dari 8 kata")
+    }
+
+    if (errors.length > 0) {
+        res.status(400).json({ error: "Validasi gagal", detail: errors });
+        return;
+    }
+
+    next();
+}
+
+export function validasiLogin(req: Request, res: Response, next: NextFunction): void {
+    const { email, password } = req.body;
+    const errors: string[] = [];
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || !emailRegex.test(email)) {
+        errors.push("Email wajib diisi dan formatnya harus valid (contoh: mentor@gmail.com)");
+    }
+
+    if (!password && typeof password !== "string") {
+        errors.push("Password harus diisi, tidak boleh kosong")
+    }
+
+    if (String(password).length < 8) {
+        errors.push("Password harus lebih dari 8 kata")
     }
 
     if (errors.length > 0) {

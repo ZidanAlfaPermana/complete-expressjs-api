@@ -29,6 +29,7 @@ export const config = {
     },
     jwt: {
         secret: wajibAda("JWT_SECRET"),
+        expiresIn: wajibAda("JWT_EXPIRES_IN"),
     },
 } as const;
 

@@ -8,7 +8,7 @@ const app: Application = express();
 app.use(express.json());
 app.use(requestLogger);
 app.use("/api", routes);
-app.use(notFoundHandler);
 app.use(errorHandler);
+app.use(notFoundHandler);
 
 export default app;
