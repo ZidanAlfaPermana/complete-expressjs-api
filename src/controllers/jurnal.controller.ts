@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
-import {response} from "../utils";
+import {response, authUtils, AppError} from "../utils";
 
 interface JurnalBody {
     idPeserta: number;
@@ -18,12 +18,23 @@ const jurnalService = new JurnalService();
 const pesertaService = new PesertaService();
 
 export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const { peserta, status, limit } = req.query;
+    const { status, limit } = req.query;
+    const userId = req.user!.id;
 
     const data = await jurnalService.getSemuaJurnal({
-        idPeserta: peserta ? Number(peserta) : undefined,
+        idPeserta: userId,
         status: status as any,
         limit: limit ? Number(limit) : 20
+    });
+
+    response.suksesDenganTotal(res, data);
+});
+
+export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+
+    const data = await jurnalService.getSemuaJurnal({
+        idPeserta: userId,
     });
 
     response.suksesDenganTotal(res, data);
@@ -32,6 +43,13 @@ export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) =
 export const getJurnalById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const jurnal = await jurnalService.getJurnalById(id);
+    const userId = req.user!.id;
+
+    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
+
+    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
 
     if (!jurnal) {
         res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
@@ -44,6 +62,13 @@ export const getJurnalById = asyncHandler(async (req: Request, res: Response) =>
 export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const jurnal = await pesertaService.getPesertaDenganJurnal(id);
+    const userId = req.user!.id;
+
+    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
+
+    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
 
     if (!jurnal || typeof jurnal === null ) {
         res.status(404).json({ error: `Jurnal dengan Peserta id ${id} tidak ditemukan` });
@@ -81,6 +106,13 @@ export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateJurnal = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    const userId = req.user!.id;
+    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
+
+    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
     const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody);
 
     if (!jurnalUpdated) {
@@ -93,6 +125,12 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
 
 export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    const userId = req.user!.id;
+    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
+
+    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
     const deleted = await jurnalService.hapusJurnal(id);
 
     if (!deleted) {

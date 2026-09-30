@@ -34,6 +34,12 @@ export class UnauthorizedError extends AppError {
     }
 }
 
+export class ForbiddenError extends AppError {
+    constructor(pesan: string = "Akses terbatas") {
+        super(pesan, 403);
+    }
+}
+
 export class ConflictError extends AppError {
     constructor(pesan: string) {
         super(pesan, 409);

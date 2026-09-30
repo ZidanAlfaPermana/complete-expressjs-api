@@ -88,6 +88,11 @@ export async function validasiJurnal(req: Request, res: Response, next: NextFunc
 
     if (!reviewerId || typeof reviewerId !== "number") {
         errors.push("ID reviewer (mentor) wajib diisi dan harus berupa angka");
+    } else {
+        const validMentor = await new MentorRepository().findById(reviewerId);
+        if (!validMentor) {
+            errors.push("Mentor yang dikirim tidak ditemukan di database");
+        }
     }
 
     if (!review || !["sudah", "belum"].includes(review)) {

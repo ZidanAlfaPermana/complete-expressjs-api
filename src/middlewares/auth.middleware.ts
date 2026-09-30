@@ -1,17 +1,29 @@
 import { Request, Response, NextFunction } from "express";
+import { verifikasiToken, JwtPayload } from "../utils/jwt";
+import { UnauthorizedError } from "../utils/AppError";
 
-export function cekApiKey(req: Request, res: Response, next: NextFunction) {
-    const apiKey = req.headers["x-api-key"];
+declare global {
+    namespace Express {
+        interface Request{
+            user?: JwtPayload;
+        }
+    }
+}
 
-    if (!apiKey) {
-        res.status(401).json({ error: "API key tidak ditemukan" });
-        return;
+export function authGuard(req: Request, res: Response, next: NextFunction): void {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        throw new UnauthorizedError("Token tidak ditemukan");
     }
 
-    if (apiKey !== process.env.JWT_SECRET) {
-        res.status(403).json({ error: "API key tidak valid" });
-        return;
-    }
+    const token = authHeader.split(" ")[1];
 
-    next();
+    try {
+        const payload = verifikasiToken(token);
+        req.user = payload;   // sekarang tertyped, bisa dipakai di handler
+        next();
+    } catch (err) {
+        throw new UnauthorizedError("Token tidak valid atau sudah kedaluwarsa");
+    }
 }

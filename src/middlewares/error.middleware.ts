@@ -1,5 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import {AppError, ConflictError, NotFoundError, UnauthorizedError, ValidationError} from "../utils/AppError";
+import {
+    AppError,
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+    ValidationError
+} from "../utils/AppError";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -43,6 +50,16 @@ export function errorHandler(
         res.status(err.statusCode).json({
             sukses: false,
             error: "Tidak memiliki izin untuk mengakses API ini",
+            ...(isDev && { stack: err.stack })
+        });
+        return;
+    }
+
+    // Error yang kita buat sendiri
+    if (err instanceof ForbiddenError) {
+        res.status(err.statusCode).json({
+            sukses: false,
+            error: "Izin API ini terbatas",
             ...(isDev && { stack: err.stack })
         });
         return;

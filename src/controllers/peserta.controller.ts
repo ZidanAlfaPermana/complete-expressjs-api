@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { PesertaService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
-import { response } from "../utils";
+import { response, authUtils, AppError } from "../utils";
 
 interface PesertaBody {
     nama: string;
@@ -29,6 +29,11 @@ export const getSemuaPeserta = asyncHandler(async (req: Request, res: Response) 
 
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+
+    if (!authUtils.isUserSame(req.user!.id, id)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
     const peserta = await pesertaService.getPesertaById(id);
 
     if (!peserta) {
@@ -46,6 +51,11 @@ export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>
 
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+
+    if (!authUtils.isUserSame(req.user!.id, id)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
     const pesertaUpdated = await pesertaService.updatePeserta(id, req.body as PesertaBody);
 
     if (!pesertaUpdated) {
@@ -58,6 +68,11 @@ export const updatePeserta = asyncHandler(async (req: Request, res: Response) =>
 
 export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+
+    if (!authUtils.isUserSame(req.user!.id, id)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
     const deleted = await pesertaService.hapusPeserta(id);
 
     if (!deleted) {
@@ -66,4 +81,12 @@ export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => 
     }
 
     response.sukses(res, [], "Data berhasil dihapus", 204);
+});
+
+export const getProfilSaya = asyncHandler(async (req, res) => {
+
+    const userId = req.user!.id;
+
+    const peserta = await pesertaService.getPesertaById(userId);
+    response.sukses(res, peserta);
 });

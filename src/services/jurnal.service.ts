@@ -110,4 +110,8 @@ export class JurnalService {
         const result = await this.jurnalRepo.delete(id);
         return (result.affected ?? 0) > 0;
     }
+
+    async getUserIdFromJurnal(idJurnal: number) {
+        return this.jurnalRepo.getUserIdFromJurnalId(idJurnal);
+    }
 }

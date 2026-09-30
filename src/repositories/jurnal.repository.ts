@@ -36,4 +36,9 @@ export class JurnalRepository {
     async delete(id: number) {
         return this.repo.delete(id);
     }
+
+    async getUserIdFromJurnalId(idJurnal: number) {
+        const jurnal = await this.repo.findOneBy({ id: idJurnal });
+        return jurnal?.pesertaId;
+    }
 }

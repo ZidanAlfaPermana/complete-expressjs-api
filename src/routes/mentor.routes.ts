@@ -6,8 +6,8 @@ const router = Router();
 
 router.get("/", MentorController.getSemuaMentor);
 router.get("/:id", MentorController.getMentorById);
-router.post("/", ValidationMiddleware.validasiMentor, MentorController.buatMentor);
-router.put("/:id", ValidationMiddleware.validasiMentor, MentorController.updateMentor);
-router.delete("/:id", AuthMiddleware.cekApiKey, MentorController.hapusMentor);
+router.post("/", AuthMiddleware.authGuard, ValidationMiddleware.validasiMentor, MentorController.buatMentor);
+router.put("/:id", AuthMiddleware.authGuard, ValidationMiddleware.validasiMentor, MentorController.updateMentor);
+router.delete("/:id", AuthMiddleware.authGuard, MentorController.hapusMentor);
 
 export default router;
