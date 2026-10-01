@@ -9,7 +9,7 @@ interface JurnalFilter {
 }
 
 interface JurnalBody {
-    idPeserta: number;
+    pesertaId: number;
     status: "belum" | "selesai" | "proses";
     kegiatan: string;
     hambatan?: string;
@@ -74,13 +74,13 @@ export class JurnalService {
     }
 
     async buatJurnal(data: JurnalBody) {
-        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.idPeserta });
+        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
         if (!pesertaExists) {
-            throw new Error(`Peserta dengan id ${data.idPeserta} tidak ditemukan`);
+            throw new Error(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
         }
 
         return this.jurnalRepo.save({
-            pesertaId: data.idPeserta,
+            pesertaId: data.pesertaId,
             status: data.status,
             kegiatan: data.kegiatan,
             hambatan: data.hambatan,
@@ -95,9 +95,9 @@ export class JurnalService {
         const jurnal = await this.jurnalRepo.findById(id);
         if (!jurnal) return null;
 
-        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.idPeserta });
+        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
         if (!pesertaExists) {
-            throw new Error(`Peserta dengan id ${data.idPeserta} tidak ditemukan`);
+            throw new Error(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
         }
 
         return this.jurnalRepo.save({

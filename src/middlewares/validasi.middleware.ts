@@ -52,7 +52,7 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
         errors.push("Password harus diisi, tidak boleh kosong")
     }
 
-    if (String(password).length < 3) {
+    if (String(password).length < 8) {
         errors.push("Password harus lebih dari 3 kata")
     }
 
@@ -65,21 +65,15 @@ export async function validasiPeserta(req: Request, res: Response, next: NextFun
 }
 
 export async function validasiJurnal(req: Request, res: Response, next: NextFunction) {
-    const { idPeserta, status, kegiatan, hambatan, rencanaBesok, linkCommit, review, reviewerId} = req.body;
+    const { pesertaId, status, kegiatan, hambatan, rencanaBesok, linkCommit, review, reviewerId} = req.body;
     const errors: string[] = [];
 
     if (hambatan && typeof hambatan !== "string") {
         errors.push("Hambatan harus berupa teks");
     }
 
-    if (!idPeserta || typeof idPeserta !== "number") {
+    if (!pesertaId || typeof pesertaId !== "number") {
         errors.push("ID peserta wajib diisi dan harus berupa angka");
-    }
-
-    const validMentor = await new MentorRepository().findById(reviewerId);
-
-    if (!validMentor || typeof validMentor === null) {
-        errors.push("Mentor yang dikirim tidak ditemukan di database");
     }
 
     if (!status || !["selesai", "proses", "belum"].includes(status)) {

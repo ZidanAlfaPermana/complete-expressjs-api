@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
+import { RoleMiddleware } from "../middlewares"
 
 interface JurnalBody {
-    idPeserta: number;
+    pesertaId: number;
     status: "belum" | "selesai" | "proses";
     kegiatan: string;
     hambatan?: string;
@@ -18,11 +19,10 @@ const jurnalService = new JurnalService();
 const pesertaService = new PesertaService();
 
 export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const { status, limit } = req.query;
-    const userId = req.user!.id;
+    const { status, limit, user_id } = req.query;
 
     const data = await jurnalService.getSemuaJurnal({
-        idPeserta: userId,
+        idPeserta: user_id as any,
         status: status as any,
         limit: limit ? Number(limit) : 20
     });
@@ -47,7 +47,7 @@ export const getJurnalById = asyncHandler(async (req: Request, res: Response) =>
 
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 
-    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+    if (authUtils.isUserSame(userId, userIdFromJurnal) || !RoleMiddleware.requireRole("mentor")) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 
@@ -109,7 +109,7 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
     const userId = req.user!.id;
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 
-    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+    if (req.user?.role !== "mentor" && !authUtils.isUserSame(userId, userIdFromJurnal)) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 
