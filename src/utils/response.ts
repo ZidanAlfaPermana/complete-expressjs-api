@@ -3,7 +3,7 @@ import { tanpaPassword } from "./password";
 
 export function sukses<T>(
     res: Response,
-    data: T,
+    data?: T,
     pesan: string = "Berhasil",
     statusCode: number = 200
 ): void {

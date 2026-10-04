@@ -16,3 +16,15 @@ export function buatToken(payload: JwtPayload): string {
 export function verifikasiToken(token: string): JwtPayload {
     return jwt.verify(token, config.jwt.secret) as JwtPayload;
 }
+
+export function buatAccessToken(payload: JwtPayload): string {
+    return jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn as any });
+}
+
+export function buatRefreshToken(payload: JwtPayload): string {
+    return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn as any });
+}
+
+export function verifikasiRefreshToken(token: string): JwtPayload {
+    return jwt.verify(token, config.jwt.refreshSecret) as JwtPayload;
+}

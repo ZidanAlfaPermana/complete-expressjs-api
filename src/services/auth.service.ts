@@ -1,10 +1,12 @@
 import { AppDataSource } from "../config/database.config";
-import { Peserta } from "../entities";
+import {Peserta} from "../entities";
+import { RefreshTokenRepository } from "../repositories";
 import { hashPassword, cekPassword } from "../utils/password";
-import { buatToken } from "../utils/jwt";
+import {buatAccessToken, buatRefreshToken, verifikasiRefreshToken} from "../utils/jwt";
 import { ConflictError, UnauthorizedError } from "../utils/AppError";
 
 const repo = AppDataSource.getRepository(Peserta);
+const repoAuth = new RefreshTokenRepository();
 
 interface RegisterInput {
     nama: string;
@@ -30,15 +32,17 @@ export async function login(data: LoginInput) {
         throw new UnauthorizedError("Email atau password salah");
     }
 
-    const token = buatToken({
-        id: peserta.id,
-        email: peserta.email,
-        role: peserta.role,
+    const accessToken = buatAccessToken({ id: peserta.id, email: peserta.email, role: peserta.role });
+    const refreshToken = buatRefreshToken({ id: peserta.id, email: peserta.email, role: peserta.role });
+
+    await repoAuth.save({
+        token: refreshToken,
+        peserta,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     const { password, ...pesertaAman } = peserta;
-
-    return { token, peserta: pesertaAman };
+    return { accessToken, refreshToken, peserta: pesertaAman };
 }
 
 export async function register(data: RegisterInput) {
@@ -63,4 +67,21 @@ export async function register(data: RegisterInput) {
     const { password, ...aman } = tersimpan;
 
     return aman;
+}
+
+export async function refresh(refreshTokenInput: string) {
+    const payload = verifikasiRefreshToken(refreshTokenInput);   // lempar error jika invalid
+
+    const tersimpan = await repoAuth.findOneBy(refreshTokenInput);
+    if (!tersimpan) {
+        throw new UnauthorizedError("Refresh token tidak dikenali atau sudah dicabut");
+    }
+
+    const { id, email, role } = payload;
+    const accessTokenBaru = buatAccessToken({ id, email, role });
+    return { accessToken: accessTokenBaru };
+}
+
+export async function logout(refreshTokenInput: string) {
+    await repoAuth.delete(refreshTokenInput);
 }
