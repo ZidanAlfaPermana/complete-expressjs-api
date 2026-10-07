@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(AuthMiddleware.authGuard);
 
-router.get("/saya", RoleMiddleware.requireRole("mentor", "peserta"), JurnalController.getJurnalSaya);
+router.get("/me", RoleMiddleware.requireRole("mentor", "peserta"), JurnalController.getJurnalSaya);
 router.get("/", RoleMiddleware.requireRole("mentor"), JurnalController.getSemuaJurnal);
 router.get("/peserta", RoleMiddleware.requireRole("mentor"), JurnalController.getJurnalDenganPeserta);
 
