@@ -5,7 +5,7 @@ import {ValidationMiddleware, AuthMiddleware, RoleMiddleware} from "../middlewar
 const router = Router();
 
 router.get("/", PesertaController.getSemuaPeserta);
-router.get("/profil-saya", AuthMiddleware.authGuard, PesertaController.getProfilSaya);
+router.get("/saya", AuthMiddleware.authGuard, PesertaController.getProfilSaya);
 router.get("/:id", AuthMiddleware.authGuard, PesertaController.getPesertaById);
 router.get("/:id/jurnal", AuthMiddleware.authGuard, JurnalController.getJurnalPesertaById);
 router.post("/", AuthMiddleware.authGuard, ValidationMiddleware.validasiPeserta, PesertaController.buatPeserta);

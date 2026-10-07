@@ -190,3 +190,15 @@ npm run migration:run
 ```bash
 npm run dev 
 ```
+
+# Kenapa DELETE Harus Idempotent?
+
+Idempotent artinya dikirim sekali atau sepuluh kali, hasil akhirnya di server sama. `DELETE /peserta/1` yang pertama membalas 204, berikutnya 404, tapi datanya tetap sama: peserta 1 hilang. Status code boleh beda, efeknya tidak.
+
+Ini penting karena jaringan tidak bisa dipercaya. Kalau sinyal putus dan client tidak tahu requestnya sampai atau tidak, client aman mengirim ulang. Itu juga sebabnya DELETE harus menunjuk resource spesifik (`/peserta/1`), bukan "peserta terakhir", karena kalau di-retry bisa menghapus dua orang.
+ 
+---
+
+# Kenapa Tidak Boleh Menghapus Lewat GET?
+
+GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: crawler, preview link di WhatsApp, prefetch browser, dan retry otomatis. Link seperti `/peserta/1/hapus` bisa terpicu sendiri oleh semuanya. Selain itu, `<img src="https://situsmu/peserta/1/hapus">` di halaman mana pun sudah cukup untuk serangan CSRF. Pakai DELETE untuk menghapus.
