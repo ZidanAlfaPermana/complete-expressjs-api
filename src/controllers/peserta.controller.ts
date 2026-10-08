@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { PesertaService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response, authUtils, AppError } from "../utils";
+import {SORT_PESERTA} from "../services/peserta.service";
+import {buatMeta, parseListQuery} from "../utils/pagination";
+import {suksesDenganMeta} from "../utils/response";
 
 interface PesertaBody {
     nama: string;
@@ -15,16 +18,13 @@ interface PesertaBody {
 
 const pesertaService = new PesertaService();
 
-export const getSemuaPeserta = asyncHandler(async (req: Request, res: Response) => {
-    const { sekolah, fase, limit } = req.query;
+export const getSemuaPeserta = asyncHandler(async (req, res) => {
+    const lq = parseListQuery(req.query, SORT_PESERTA);
+    const sekolah = typeof req.query.sekolah === "string" ? req.query.sekolah : undefined;
+    const fase = req.query.fase ? Number(req.query.fase) : undefined;
 
-    const data = await pesertaService.getSemuaPeserta({
-        sekolah: sekolah as string,
-        fase: fase ? Number(fase) : undefined,
-        limit: limit ? Number(limit) : 20
-    });
-
-    response.suksesDenganTotal(res, data);
+    const { data, total } = await pesertaService.getSemuaPeserta(lq, { sekolah, fase });
+    suksesDenganMeta(res, data, buatMeta(lq.page, lq.limit, total));
 });
 
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {

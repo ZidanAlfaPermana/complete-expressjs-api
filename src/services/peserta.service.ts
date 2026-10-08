@@ -1,12 +1,9 @@
 import { PesertaRepository } from "../repositories";
 import {Skill} from "../entities";
 import {hashPassword} from "../utils/password";
+import {ListQuery} from "../utils/pagination";
+import {PesertaFilter} from "../repositories/peserta.repository";
 
-interface PesertaFilter {
-    sekolah?: string;
-    fase?: number;
-    limit?: number;
-}
 
 interface PesertaBody {
     nama: string;
@@ -19,17 +16,13 @@ interface PesertaBody {
     skillIds?: number[];
 }
 
+export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
+
 export class PesertaService {
     private pesertaRepo = new PesertaRepository();
 
-    async getSemuaPeserta(filters: PesertaFilter) {
-        const where: any = {};
-
-        if (filters.sekolah) where.sekolah = filters.sekolah;
-        if (filters.fase) where.fase = filters.fase;
-
-        const limit = filters.limit ?? 20;
-        return this.pesertaRepo.findWithFilters(where, limit);
+    async getSemuaPeserta(lq: ListQuery, filter: PesertaFilter) {
+        return this.pesertaRepo.findPaginated(lq, filter);
     }
 
     async getTotalPeserta() {
@@ -46,10 +39,15 @@ export class PesertaService {
     }
 
     async buatPeserta(data: PesertaBody) {
-        const isDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
+        const isNamaDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
+        const isEmailDuplikat = await this.pesertaRepo.findByEmail(data.email);
 
-        if (isDuplikat) {
+        if (isNamaDuplikat) {
             throw new Error(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
+        }
+
+        if (isEmailDuplikat) {
+            throw new Error(`Email sudah terdaftar, coba email yang lain`);
         }
 
         const skills = data.skillIds ? data.skillIds.map(id => ({ id } as Skill)) : [];

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { tanpaPassword } from "./password";
+import {PaginationMeta} from "./pagination";
 
 export function sukses<T>(
     res: Response,
@@ -32,4 +33,14 @@ export function diubah<T>(res: Response, data: T, pesan: string = "Data berhasil
 
 export function gagal<T>(res: Response, pesan: string = "Data gagal diproses", errors: T[], code: number = 500): void {
     res.status(code).json({ sukses: false, pesan, errors });
+}
+
+// src/utils/response.ts — tambahkan
+export function suksesDenganMeta<T>(
+    res: Response,
+    data: T[],
+    meta: PaginationMeta,
+    pesan: string = "Berhasil"
+): void {
+    res.status(200).json({ sukses: true, pesan, data, meta });
 }

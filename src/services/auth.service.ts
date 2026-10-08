@@ -21,7 +21,11 @@ interface LoginInput {
 }
 
 export async function login(data: LoginInput) {
-    const peserta = await repo.findOneBy({ email: data.email });
+    const peserta = await repo
+  .createQueryBuilder("p")
+  .addSelect("p.password")
+  .where("p.email = :email", { email: data.email })
+  .getOne();
 
     if (!peserta) {
         throw new UnauthorizedError("Email atau password salah");
@@ -46,7 +50,11 @@ export async function login(data: LoginInput) {
 }
 
 export async function register(data: RegisterInput) {
-    const sudahAda = await repo.findOneBy({ email: data.email });
+    const sudahAda = await repo
+  .createQueryBuilder("p")
+  .addSelect("p.password")
+  .where("p.email = :email", { email: data.email })
+  .getOne();
     if (sudahAda) {
         throw new ConflictError("Email sudah terdaftar");
     }

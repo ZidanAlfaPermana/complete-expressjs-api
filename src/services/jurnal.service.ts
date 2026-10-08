@@ -1,12 +1,8 @@
 import { JurnalRepository } from "../repositories";
 import { AppDataSource } from "../config/database.config";
 import { Peserta } from "../entities";
-
-interface JurnalFilter {
-    idPeserta?: number;
-    status?: "belum" | "selesai" | "proses";
-    limit?: number;
-}
+import {JurnalFilter} from "../repositories/jurnal.repository";
+import {ListQuery} from "../utils/pagination";
 
 interface JurnalBody {
     pesertaId: number;
@@ -19,18 +15,14 @@ interface JurnalBody {
     reviewerId: number;
 }
 
+export const SORT_JURNAL = ["createdAt", "statusReview"] as const;
+
 export class JurnalService {
     private jurnalRepo = new JurnalRepository();
     private pesertaRepo = AppDataSource.getRepository(Peserta);
 
-    async getSemuaJurnal(filters: JurnalFilter) {
-        const where: any = {};
-
-        if (filters.idPeserta) where.pesertaId = filters.idPeserta;
-        if (filters.status) where.status = filters.status;
-
-        const limit = filters.limit ?? 20;
-        return this.jurnalRepo.findWithFilters(where, limit);
+    async getSemuaJurnal(lq: ListQuery, filter: JurnalFilter) {
+        return this.jurnalRepo.findPaginated(lq, filter);
     }
 
     async getTotalJurnal() {

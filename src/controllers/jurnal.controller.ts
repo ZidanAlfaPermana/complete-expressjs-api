@@ -3,6 +3,8 @@ import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
 import { RoleMiddleware } from "../middlewares"
+import {SORT_JURNAL} from "../services/jurnal.service";
+import {buatMeta, parseListQuery} from "../utils/pagination";
 
 interface JurnalBody {
     pesertaId: number;
@@ -18,24 +20,29 @@ interface JurnalBody {
 const jurnalService = new JurnalService();
 const pesertaService = new PesertaService();
 
+function parseTanggal(nilai: unknown, akhirHari = false): Date | undefined {
+    if (typeof nilai !== "string" || !nilai) return undefined;
+    const d = new Date(`${nilai}T${akhirHari ? "23:59:59.999" : "00:00:00"}`);
+    if (isNaN(d.getTime())) throw new Error(`Format tanggal tidak valid: ${nilai} (pakai YYYY-MM-DD)`);
+    return d;
+}
+
 export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const { status, limit, user_id } = req.query;
+    const lq = parseListQuery(req.query, SORT_JURNAL);
 
-    const data = await jurnalService.getSemuaJurnal({
-        idPeserta: user_id as any,
-        status: status as any,
-        limit: limit ? Number(limit) : 20
-    });
+    const pesertaId = req.query.pesertaId ? Number(req.query.pesertaId) : undefined;
+    const review = typeof req.query.review === "string" ? req.query.review : undefined;
+    const from = parseTanggal(req.query.from);
+    const to = parseTanggal(req.query.to, true);
 
-    response.suksesDenganTotal(res, data);
+    const { data, total } = await jurnalService.getSemuaJurnal(lq, { pesertaId, review, from, to });
+    response.suksesDenganMeta(res, data, buatMeta(lq.page, lq.limit, total));
 });
 
 export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.id;
 
-    const data = await jurnalService.getSemuaJurnal({
-        idPeserta: userId,
-    });
+    const data = await jurnalService.getJurnalByPesertaId(userId);
 
     response.suksesDenganTotal(res, data);
 });

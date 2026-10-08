@@ -32,7 +32,7 @@ export class Peserta {
     @Column({ type: "enum", enum: ["aktif", "lulus", "berhenti"], default: "aktif" })
     status!: StatusPeserta;
 
-    @Column({ type: "varchar" })
+    @Column({ type: "varchar", select: false })
     password!: string;   // ini SELALU berisi hash, tidak pernah plaintext
 
     @Column({ type: "varchar", default: "peserta" })
