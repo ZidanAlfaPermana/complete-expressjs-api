@@ -30,7 +30,7 @@ export const getSemuaPeserta = asyncHandler(async (req, res) => {
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.params.id);
 
-    if (!authUtils.isUserSame(req.user!.id, id)) {
+    if (!authUtils.isUserSame(req.user!.id, id) && req.user?.role !== "mentor") {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 

@@ -3,6 +3,7 @@ import {Skill} from "../entities";
 import {hashPassword} from "../utils/password";
 import {ListQuery} from "../utils/pagination";
 import {PesertaFilter} from "../repositories/peserta.repository";
+import {ConflictError} from "../utils/AppError";
 
 
 interface PesertaBody {
@@ -43,11 +44,11 @@ export class PesertaService {
         const isEmailDuplikat = await this.pesertaRepo.findByEmail(data.email);
 
         if (isNamaDuplikat) {
-            throw new Error(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
+            throw new ConflictError(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
         }
 
         if (isEmailDuplikat) {
-            throw new Error(`Email sudah terdaftar, coba email yang lain`);
+            throw new ConflictError(`Email sudah terdaftar, coba email yang lain`);
         }
 
         const skills = data.skillIds ? data.skillIds.map(id => ({ id } as Skill)) : [];
@@ -72,7 +73,7 @@ export class PesertaService {
         const isDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
 
         if (isDuplikat && isDuplikat.id !== id) {
-            throw new Error(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
+            throw new ConflictError(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
         }
 
         const skills = data.skillIds ? data.skillIds.map(skillId => ({ id: skillId } as Skill)) : peserta.skills;

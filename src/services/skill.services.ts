@@ -1,4 +1,5 @@
 import { SkillRepository } from "../repositories";
+import {ConflictError} from "../utils/AppError";
 
 interface SkillBody {
     nama: string;
@@ -18,7 +19,7 @@ export class SkillService {
     async buatSkill(data: SkillBody) {
         const isDuplikat = await this.skillRepo.findByNama(data.nama);
         if (isDuplikat) {
-            throw new Error(`Skill dengan nama ${data.nama} sudah ada`);
+            throw new ConflictError(`Skill dengan nama ${data.nama} sudah ada`);
         }
 
         return this.skillRepo.save(data);
@@ -30,7 +31,7 @@ export class SkillService {
 
         const isDuplikat = await this.skillRepo.findByNama(data.nama);
         if (isDuplikat && isDuplikat.id !== id) {
-            throw new Error(`Skill dengan nama ${data.nama} sudah ada`);
+            throw new ConflictError(`Skill dengan nama ${data.nama} sudah ada`);
         }
 
         return this.skillRepo.save({

@@ -34,7 +34,7 @@ export class JurnalHarian {
     @CreateDateColumn()
     createdAt!: Date;
 
-    @ManyToOne(() => Peserta, (peserta) => peserta.jurnalList)
+    @ManyToOne(() => Peserta, (peserta) => peserta.jurnalList, { onDelete: "RESTRICT" })
     @JoinColumn({ name: "pesertaId" })
     peserta!: Peserta;
 

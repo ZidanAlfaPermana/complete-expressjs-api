@@ -3,6 +3,7 @@ import { AppDataSource } from "../config/database.config";
 import { Peserta } from "../entities";
 import {JurnalFilter} from "../repositories/jurnal.repository";
 import {ListQuery} from "../utils/pagination";
+import {ConflictError, NotFoundError} from "../utils/AppError";
 
 interface JurnalBody {
     pesertaId: number;
@@ -68,7 +69,7 @@ export class JurnalService {
     async buatJurnal(data: JurnalBody) {
         const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
         if (!pesertaExists) {
-            throw new Error(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
+            throw new ConflictError(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
         }
 
         return this.jurnalRepo.save({
@@ -89,7 +90,7 @@ export class JurnalService {
 
         const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
         if (!pesertaExists) {
-            throw new Error(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
+            throw new NotFoundError(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
         }
 
         return this.jurnalRepo.save({

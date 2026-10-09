@@ -1,0 +1,15 @@
+export const ErrorCode = {
+    VALIDATION_ERROR: "VALIDATION_ERROR",
+    INVALID_JSON: "INVALID_JSON",
+    UNAUTHORIZED: "UNAUTHORIZED",
+    TOKEN_EXPIRED: "TOKEN_EXPIRED",
+    INVALID_TOKEN: "INVALID_TOKEN",
+    FORBIDDEN: "FORBIDDEN",
+    NOT_FOUND: "NOT_FOUND",
+    CONFLICT: "CONFLICT",
+    RATE_LIMITED: "RATE_LIMITED",
+    INTERNAL_ERROR: "INTERNAL_ERROR",
+} as const;
+
+// Union type otomatis: "VALIDATION_ERROR" | "INVALID_JSON" | ...
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

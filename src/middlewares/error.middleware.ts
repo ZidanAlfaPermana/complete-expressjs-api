@@ -1,113 +1,102 @@
+// src/middlewares/error.middleware.ts
 import { Request, Response, NextFunction } from "express";
-import {
-    AppError,
-    ConflictError,
-    ForbiddenError,
-    NotFoundError,
-    UnauthorizedError,
-    ValidationError
-} from "../utils/AppError";
+import { QueryFailedError } from "typeorm";
+import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
+import { AppError, ConflictError, NotFoundError } from "../utils/AppError";
+import { ErrorCode } from "../utils/errorCodes";
+import { logger } from "../utils/logger";
+import { isProd } from "../config/env.config";
 
-const isDev = process.env.NODE_ENV === "development";
+// Kode error PostgreSQL — daftar lengkap ada di dokumentasi resmi
+const PG_UNIQUE_VIOLATION = "23505";       // nilai duplikat di kolom unique
+const PG_FOREIGN_KEY_VIOLATION = "23503";  // relasi tidak valid / masih dipakai
+const PG_INVALID_TEXT = "22P02";           // format nilai salah (mis. enum/angka)
+
+function terjemahkanError(err: unknown): AppError {
+    if (err instanceof AppError) return err;
+
+    if (err instanceof QueryFailedError) {
+        const kodePg = (err.driverError as { code?: string }).code;
+
+        if (kodePg === PG_UNIQUE_VIOLATION) {
+            return new ConflictError("Data dengan nilai yang sama sudah ada");
+        }
+        if (kodePg === PG_FOREIGN_KEY_VIOLATION) {
+            return new ConflictError("Data berelasi dengan data lain (tidak ditemukan atau masih dipakai)");
+        }
+        if (kodePg === PG_INVALID_TEXT) {
+            return new AppError("Format nilai tidak valid", 400, ErrorCode.VALIDATION_ERROR);
+        }
+    }
+
+    // TokenExpiredError turunan dari JsonWebTokenError → periksa yang spesifik dulu
+    if (err instanceof TokenExpiredError) {
+        return new AppError("Token sudah kedaluwarsa", 401, ErrorCode.TOKEN_EXPIRED);
+    }
+    if (err instanceof JsonWebTokenError) {
+        return new AppError("Token tidak valid", 401, ErrorCode.INVALID_TOKEN);
+    }
+
+    // express.json() melempar error bertipe ini saat body JSON rusak
+    if (
+        typeof err === "object" &&
+        err !== null &&
+        (err as { type?: string }).type === "entity.parse.failed"
+    ) {
+        return new AppError("Format JSON pada body tidak valid", 400, ErrorCode.INVALID_JSON);
+    }
+
+    // Tidak dikenali → anggap bug server. Jangan bocorkan isinya ke client.
+    return new AppError("Terjadi kesalahan di server", 500, ErrorCode.INTERNAL_ERROR);
+}
 
 export function errorHandler(
-    err: any,
+    err: unknown,
     req: Request,
     res: Response,
     next: NextFunction
 ): void {
-    if (err.isOperational) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            pesan: err.message, // Menampilkan "Email atau password salah"
-            errors: []
-        });
+    // Jika response sudah mulai terkirim, serahkan ke handler bawaan Express
+    if (res.headersSent) {
+        next(err);
         return;
     }
 
-    if (err instanceof AppError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: err.message,
-            ...(err instanceof ValidationError && { detail: err.detail }),
-            ...(isDev && { stack: err.stack })
+    const appErr = terjemahkanError(err);
+
+    const info = {
+        requestId: req.requestId,
+        method: req.method,
+        url: req.originalUrl,
+        status: appErr.statusCode,
+        kode: appErr.kode,
+        userId: req.user?.id,
+    };
+
+    // 5xx = salah kita (error), 4xx = salah client (warn)
+    if (appErr.statusCode >= 500) {
+        logger.error(appErr.message, {
+            ...info,
+            stack: err instanceof Error ? err.stack : String(err),
         });
-        return;
+    } else {
+        logger.warn(appErr.message, info);
     }
 
-    // Error yang kita buat sendiri
-    if (err instanceof ValidationError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: err.message,
-            detail: err.detail,
-        });
-        return;
-    }
-
-    // Error yang kita buat sendiri
-    if (err instanceof UnauthorizedError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: "Tidak memiliki izin untuk mengakses API ini",
-            ...(isDev && { stack: err.stack })
-        });
-        return;
-    }
-
-    // Error yang kita buat sendiri
-    if (err instanceof ForbiddenError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: "Izin API ini terbatas",
-            ...(isDev && { stack: err.stack })
-        });
-        return;
-    }
-
-    // Error yang kita buat sendiri
-    if (err instanceof ConflictError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: err.message,
-            ...(isDev && { stack: err.stack })
-        });
-        return;
-    }
-
-    console.error("[UNEXPECTED ERROR]", err);
-
-    res.status(500).json({
+    res.status(appErr.statusCode).json({
         sukses: false,
-        error: "Terjadi kesalahan di server",
-        ...(isDev && {
-            detail: err.message,
-            stack: err.stack,
-        }),
+        error: {
+            kode: appErr.kode,
+            pesan: appErr.message,
+            ...(appErr.detail !== undefined && { detail: appErr.detail }),
+            // Detail teknis HANYA di development
+            ...(!isProd &&
+                err instanceof Error && { debug: { asli: err.message, stack: err.stack } }),
+        },
+        requestId: req.requestId,
     });
 }
 
-export function notFoundHandler(
-    err: Error,
-    req: Request,
-    res: Response,
-    next: NextFunction
-): void {
-    if (err instanceof NotFoundError) {
-        res.status(err.statusCode).json({
-            sukses: false,
-            error: "API ini tidak ditemukan",
-        });
-        return;
-    }
-    console.error("[UNEXPECTED ERROR]", err);
-
-    res.status(500).json({
-        sukses: false,
-        error: "Terjadi kesalahan di server",
-        ...(isDev && {
-            detail: err.message,
-            stack: err.stack,
-        }),
-    });
+export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
+    next(new NotFoundError(`Route ${req.method} ${req.originalUrl}`));
 }
