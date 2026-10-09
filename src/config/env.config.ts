@@ -33,6 +33,9 @@ export const config = {
         refreshExpiresIn: wajibAda("JWT_REFRESH_EXPIRES_IN"),
         refreshSecret: wajibAda("JWT_REFRESH_SECRET"),
     },
+    cors: {
+        origins: opsional("CORS_ORIGINS", "http://localhost:5173").split(","),
+    },
 } as const;
 
 export const isDev  = config.app.env === "development";

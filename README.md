@@ -202,3 +202,63 @@ Ini penting karena jaringan tidak bisa dipercaya. Kalau sinyal putus dan client 
 # Kenapa Tidak Boleh Menghapus Lewat GET?
 
 GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: crawler, preview link di WhatsApp, prefetch browser, dan retry otomatis. Link seperti `/peserta/1/hapus` bisa terpicu sendiri oleh semuanya. Selain itu, `<img src="https://situsmu/peserta/1/hapus">` di halaman mana pun sudah cukup untuk serangan CSRF. Pakai DELETE untuk menghapus.
+
+---
+
+# log error dari errorHandler testing
+
+1. Buat endpoint test sementara yang melempar error biasa:
+
+```ts
+   router.get("/test/crash", () => {
+     throw new Error("Crash buatan untuk uji log");
+   });
+```
+
+2. Jalankan server dan panggil endpoint dengan token yang valid:
+
+```bash
+   curl -i http://localhost:3000/api/test/crash \
+     -H "Authorization: Bearer <token>"
+```
+
+3. Dari response, catat status (500) dan nilai header `X-Request-Id`, contoh:
+   `X-Request-Id: 0a7f268b-04c0-4be9-b47a-d8aebe6e2a35`
+
+4. Cari baris log dengan ID itu di terminal tempat server berjalan (Ctrl+F), atau jika log disimpan ke file:
+
+```powershell
+   Select-String -Path server.log -Pattern "0a7f268b-04c0-4be9-b47a-d8aebe6e2a35"
+```
+
+5. Pastikan baris log level `error` memuat field berikut:
+
+```json
+{
+  "waktu": "2026-10-09T15:49:13.628Z",
+  "level": "error",
+  "pesan": "Terjadi kesalahan di server",
+  "requestId": "be040351-4f26-4c78-bfe0-d5b083f88006",
+  "method": "GET",
+  "url": "/api/test/crash",
+  "status": 500,
+  "kode": "INTERNAL_ERROR",
+  "userId": 65,
+  "stack": "Error: Crash buatan untuk uji log\n    at D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\src\\routes\\health.routes.ts:23:11\n    at Layer.handleRequest (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\route.js:157:13)\n    at D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\src\\middlewares\\role.middleware.ts:16:9\n    at Layer.handleRequest (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\route.js:157:13)\n    at authGuard (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\src\\middlewares\\auth.middleware.ts:25:9)\n    at Layer.handleRequest (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\route.js:157:13)\n    at Route.dispatch (D:\\ZIDAN\\PKL TOP SECRET\\api-magang-new\\node_modules\\router\\lib\\route.js:117:3)"
+}
+```
+
+```json
+{
+  "waktu": "2026-10-09T15:53:35.456Z",
+  "level": "info",
+  "pesan": "request selesai",
+  "requestId": "1e89694b-0909-4e35-ae54-3b68bafeb269",
+  "method": "GET",
+  "url": "/api/test/crash",
+  "status": 500,
+  "durasiMs": 30
+}
+```
+
+6. Hapus endpoint `/test/crash` setelah selesai.

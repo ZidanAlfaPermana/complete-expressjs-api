@@ -1,0 +1,10 @@
+import { Request, Response, NextFunction } from "express";
+import { randomUUID } from "crypto";
+
+export function requestId(req: Request, res: Response, next: NextFunction): void {
+    // Pakai ID dari upstream (mis. reverse proxy) jika ada, kalau tidak buat baru
+    const id = (req.headers["x-request-id"] as string | undefined) ?? randomUUID();
+    req.requestId = id;
+    res.setHeader("X-Request-Id", id);
+    next();
+}

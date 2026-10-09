@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { Peserta } from "../entities";
 import { hashPassword } from "../utils/password";
 import {AppDataSource} from "../config/database.config";
+import {logger} from "../utils/logger";
 
 const SEKOLAH = ["SMKN 5 Malang", "SMKN 4 Malang", "SMK Telkom Malang", "SMKN 2 Singosari", "SMK Brawijaya"];
 const NAMA_DEPAN = ["Andi", "Budi", "Citra", "Dewi", "Eka", "Fajar", "Gita", "Hadi", "Indah", "Joko"];
@@ -34,11 +35,11 @@ async function seed() {
     });
 
     await repo.save(data);
-    console.log(`Seed selesai: ${data.length} peserta`);
+    logger.info(`Seed selesai: ${data.length} peserta`);
     await AppDataSource.destroy();
 }
 
 seed().catch((e) => {
-    console.error(e);
+    logger.error(e);
     process.exit(1);
 });
