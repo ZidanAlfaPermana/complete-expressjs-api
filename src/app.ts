@@ -20,7 +20,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));             // 3. batasi ukuran body
 app.use(requestLogger);                              // 4. log request
-app.use("/api", healthRoutes);
-app.use("/api", routes);                             // 5. route aplikasi
+app.use("/api/v1", healthRoutes);
+app.use("/api/v1", routes);                             // 5. route aplikasi
 app.use(notFoundHandler);                            // 6. 404
 app.use(errorHandler);                               // 7. error handler PALING AKHIR

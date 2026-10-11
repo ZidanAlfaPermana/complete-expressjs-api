@@ -37,8 +37,7 @@ export const getPesertaById = asyncHandler(async (req: Request, res: Response) =
     const peserta = await pesertaService.getPesertaById(id);
 
     if (!peserta) {
-        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, peserta);
@@ -46,7 +45,10 @@ export const getPesertaById = asyncHandler(async (req: Request, res: Response) =
 
 export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>, res: Response) => {
     const pesertaBaru = await pesertaService.buatPeserta(req.body);
-    response.dibuat(res, pesertaBaru);
+    res
+        .status(201)
+        .location(`/api/v1/peserta/${pesertaBaru.id}`)
+        .json({ sukses: true, pesan: "Peserta berhasil dibuat", data: pesertaBaru });
 });
 
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -59,8 +61,23 @@ export const updatePeserta = asyncHandler(async (req: Request, res: Response) =>
     const pesertaUpdated = await pesertaService.updatePeserta(id, req.body as PesertaBody);
 
     if (!pesertaUpdated) {
-        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
+    }
+
+    response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
+});
+
+export const updateBeberapaDataPeserta = asyncHandler(async (req: Request, res: Response) => {
+    const id = Number(req.user!.id);
+
+    if (!authUtils.isUserSame(req.user!.id, id)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
+    const pesertaUpdated = await pesertaService.updatePesertaBeberapa(id, req.body as PesertaBody);
+
+    if (!pesertaUpdated) {
+        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
     response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
@@ -76,11 +93,10 @@ export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => 
     const deleted = await pesertaService.hapusPeserta(id);
 
     if (!deleted) {
-        response.gagal(res, `Peserta dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
-    response.sukses(res, [], "Data berhasil dihapus", 204);
+    res.status(204).send();
 });
 
 export const getProfilSaya = asyncHandler(async (req, res) => {

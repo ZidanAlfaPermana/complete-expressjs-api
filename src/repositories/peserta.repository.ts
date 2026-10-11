@@ -42,6 +42,27 @@ export class PesertaRepository {
         return this.repo.save(data);
     }
 
+    async ubahSebagian(id: number, body: Record<string, unknown>) {
+        const peserta = await this.repo.findOneBy({ id });
+        if (!peserta) return null;
+
+        const { nama, sekolah, telepon } = body;
+        const perubahan = Object.fromEntries(
+            Object.entries({ nama, sekolah, telepon }).filter(([, nilai]) => nilai !== undefined)
+        );
+
+        this.repo.merge(peserta, perubahan);
+        return this.repo.save(peserta);
+    }
+
+    async ubahOlehMentor(id: number, perubahan: Partial<PesertaEntity>) {
+        const peserta = await this.repo.findOneBy({ id });
+        if (!peserta) return null;
+
+        this.repo.merge(peserta, perubahan);
+        return this.repo.save(peserta);
+    }
+
     async delete(id: number) {
         return this.repo.delete(id);
     }

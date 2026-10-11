@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { MentorService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response } from "../utils";
+import {AppError} from "../utils";
 
 const mentorService = new MentorService();
 
@@ -15,8 +16,7 @@ export const getMentorById = asyncHandler(async (req: Request, res: Response) =>
     const mentor = await mentorService.getMentorById(id);
 
     if (!mentor) {
-        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Mentor dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, mentor);
@@ -32,8 +32,7 @@ export const updateMentor = asyncHandler(async (req: Request, res: Response) => 
     const mentorUpdated = await mentorService.updateMentor(id, req.body);
 
     if (!mentorUpdated) {
-        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Mentor dengan id ${id} tidak ditemukan`);
     }
 
     response.diubah(res, mentorUpdated, `Mentor dengan id ${id} berhasil di edit`);
@@ -44,8 +43,7 @@ export const hapusMentor = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await mentorService.hapusMentor(id);
 
     if (!deleted) {
-        response.gagal(res, `Mentor dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Mentor dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, [], "Data berhasil dihapus", 204);

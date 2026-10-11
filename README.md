@@ -13,23 +13,23 @@ Beberapa endpoint bersifat *protected* dan membutuhkan *header* otentikasi:
 
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
-| **GET** | `/api/peserta` | Mengambil semua peserta (Mendukung query: `sekolah`, `fase`, `limit`) |
-| **GET** | `/api/peserta/:id` | Mengambil detail peserta berdasarkan ID (404 jika tidak ditemukan) |
-| **POST** | `/api/peserta` | Menambahkan peserta baru (Status 201) |
-| **PUT** | `/api/peserta/:id` | Mengupdate data peserta berdasarkan ID |
-| **DELETE**| `/api/peserta/:id` | Menghapus peserta (Wajib header `x-api-key`) |
-| **GET** | `/api/peserta/:id/jurnal`| Mengambil daftar jurnal milik peserta tertentu |
+| **GET** | `/api/v1/peserta` | Mengambil semua peserta (Mendukung query: `sekolah`, `fase`, `limit`) |
+| **GET** | `/api/v1/peserta/:id` | Mengambil detail peserta berdasarkan ID (404 jika tidak ditemukan) |
+| **POST** | `/api/v1/peserta` | Menambahkan peserta baru (Status 201) |
+| **PUT** | `/api/v1/peserta/:id` | Mengupdate data peserta berdasarkan ID |
+| **DELETE**| `/api/v1/peserta/:id` | Menghapus peserta (Wajib header `x-api-key`) |
+| **GET** | `/api/v1/peserta/:id/jurnal`| Mengambil daftar jurnal milik peserta tertentu |
 
 ### Contoh Request
 
 **1. GET Semua Peserta (dengan Filter)**
 ```bash
-curl -X GET "http://localhost:3000/api/peserta?sekolah=SMK%20Telkom&fase=2&limit=5"
+curl -X GET "http://localhost:3000/api/v1/peserta?sekolah=SMK%20Telkom&fase=2&limit=5"
 ```
 
 **2. POST Tambah Peserta Baru**
 ```bash
-curl -X POST http://localhost:3000/api/peserta \
+curl -X POST http://localhost:3000/api/v1/peserta \
 -H "Content-Type: application/json" \
 -d '{
   "nama": "Zidan Alfa",
@@ -42,7 +42,7 @@ curl -X POST http://localhost:3000/api/peserta \
 
 **3. PUT Update Peserta**
 ```bash
-curl -X PUT http://localhost:3000/api/peserta/1 \
+curl -X PUT http://localhost:3000/api/v1/peserta/1 \
 -H "Content-Type: application/json" \
 -d '{
   "nama": "Zidan Alfa Permana",
@@ -55,7 +55,7 @@ curl -X PUT http://localhost:3000/api/peserta/1 \
 
 **4. DELETE Hapus Peserta**
 ```bash
-curl -X DELETE http://localhost:3000/api/peserta/1 \
+curl -X DELETE http://localhost:3000/api/v1/peserta/1 \
 -H "x-api-key: rahasia123"
 ```
 
@@ -67,23 +67,23 @@ curl -X DELETE http://localhost:3000/api/peserta/1 \
 
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
-| **GET** | `/api/jurnal` | Mengambil semua jurnal (Mendukung query: `peserta`, `status`, `limit`) |
-| **GET** | `/api/jurnal/:id` | Mengambil detail jurnal berdasarkan ID |
-| **POST** | `/api/jurnal` | Menambahkan jurnal baru (Status 201) |
-| **PUT** | `/api/jurnal/:id` | Mengupdate data jurnal secara keseluruhan |
-| **PATCH**| `/api/jurnal/:id/review`| Mengubah status review jurnal saja |
-| **DELETE**| `/api/jurnal/:id` | Menghapus jurnal (Wajib header `x-api-key`) |
+| **GET** | `/api/v1/jurnal` | Mengambil semua jurnal (Mendukung query: `peserta`, `status`, `limit`) |
+| **GET** | `/api/v1/jurnal/:id` | Mengambil detail jurnal berdasarkan ID |
+| **POST** | `/api/v1/jurnal` | Menambahkan jurnal baru (Status 201) |
+| **PUT** | `/api/v1/jurnal/:id` | Mengupdate data jurnal secara keseluruhan |
+| **PATCH**| `/api/v1/jurnal/:id/review`| Mengubah status review jurnal saja |
+| **DELETE**| `/api/v1/jurnal/:id` | Menghapus jurnal (Wajib header `x-api-key`) |
 
 ### Contoh Request
 
 **1. GET Semua Jurnal (dengan Filter)**
 ```bash
-curl -X GET "http://localhost:3000/api/jurnal?peserta=1&status=selesai&limit=10"
+curl -X GET "http://localhost:3000/api/v1/jurnal?peserta=1&status=selesai&limit=10"
 ```
 
 **2. POST Tambah Jurnal Baru**
 ```bash
-curl -X POST http://localhost:3000/api/jurnal \
+curl -X POST http://localhost:3000/api/v1/jurnal \
 -H "Content-Type: application/json" \
 -d '{
   "idPeserta": 1,
@@ -98,7 +98,7 @@ curl -X POST http://localhost:3000/api/jurnal \
 
 **3. PUT Update Jurnal (Keseluruhan Data)**
 ```bash
-curl -X PUT http://localhost:3000/api/jurnal/1 \
+curl -X PUT http://localhost:3000/api/v1/jurnal/1 \
 -H "Content-Type: application/json" \
 -d '{
   "idPeserta": 1,
@@ -113,7 +113,7 @@ curl -X PUT http://localhost:3000/api/jurnal/1 \
 
 **4. PATCH Update Status Review Jurnal**
 ```bash
-curl -X PATCH http://localhost:3000/api/jurnal/1/review \
+curl -X PATCH http://localhost:3000/api/v1/jurnal/1/review \
 -H "Content-Type: application/json" \
 -d '{
   "review": "sudah"
@@ -122,7 +122,7 @@ curl -X PATCH http://localhost:3000/api/jurnal/1/review \
 
 **5. DELETE Hapus Jurnal**
 ```bash
-curl -X DELETE http://localhost:3000/api/jurnal/1 \
+curl -X DELETE http://localhost:3000/api/v1/jurnal/1 \
 -H "x-api-key: rahasia123"
 ```
 
@@ -134,13 +134,13 @@ curl -X DELETE http://localhost:3000/api/jurnal/1 \
 
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
-| **GET** | `/api/stats` | Mengambil data total peserta, total jurnal, total jurnal yang belum direview, dan rata-rata jurnal per peserta. |
+| **GET** | `/api/v1/stats` | Mengambil data total peserta, total jurnal, total jurnal yang belum direview, dan rata-rata jurnal per peserta. |
 
 ### Contoh Request
 
 **1. GET Statistik Total**
 ```bash
-curl -X GET http://localhost:3000/api/stats
+curl -X GET http://localhost:3000/api/v1/stats
 ```
 
 **Contoh Response:**
@@ -218,7 +218,7 @@ GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: c
 2. Jalankan server dan panggil endpoint dengan token yang valid:
 
 ```bash
-   curl -i http://localhost:3000/api/test/crash \
+   curl -i http://localhost:3000/api/v1/test/crash \
      -H "Authorization: Bearer <token>"
 ```
 
@@ -240,7 +240,7 @@ GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: c
   "pesan": "Terjadi kesalahan di server",
   "requestId": "be040351-4f26-4c78-bfe0-d5b083f88006",
   "method": "GET",
-  "url": "/api/test/crash",
+  "url": "/api/v1/test/crash",
   "status": 500,
   "kode": "INTERNAL_ERROR",
   "userId": 65,
@@ -255,7 +255,7 @@ GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: c
   "pesan": "request selesai",
   "requestId": "1e89694b-0909-4e35-ae54-3b68bafeb269",
   "method": "GET",
-  "url": "/api/test/crash",
+  "url": "/api/v1/test/crash",
   "status": 500,
   "durasiMs": 30
 }

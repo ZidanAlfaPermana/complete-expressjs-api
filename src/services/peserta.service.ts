@@ -1,5 +1,5 @@
 import { PesertaRepository } from "../repositories";
-import {Skill} from "../entities";
+import {Skill, Peserta} from "../entities";
 import {hashPassword} from "../utils/password";
 import {ListQuery} from "../utils/pagination";
 import {PesertaFilter} from "../repositories/peserta.repository";
@@ -66,30 +66,50 @@ export class PesertaService {
         });
     }
 
-    async updatePeserta(id: number, data: PesertaBody) {
+    async updatePeserta(id: number, data: Partial<PesertaBody>) {
         const peserta = await this.pesertaRepo.findById(id);
         if (!peserta) return null;
 
-        const isDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
+        const { nama, email, password, status, sekolah, fase, role, skillIds } = data;
 
-        if (isDuplikat && isDuplikat.id !== id) {
-            throw new ConflictError(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
+        const namaFinal = nama ?? peserta.nama;
+        const sekolahFinal = sekolah ?? peserta.sekolah;
+        const duplikat = await this.pesertaRepo.findByNamaAndSekolah(namaFinal, sekolahFinal);
+        if (duplikat && duplikat.id !== id) {
+            throw new ConflictError(`Peserta bernama ${namaFinal} dari sekolah ${sekolahFinal} sudah terdaftar!`);
         }
 
-        const skills = data.skillIds ? data.skillIds.map(skillId => ({ id: skillId } as Skill)) : peserta.skills;
+        const perubahan: Partial<Peserta> = Object.fromEntries(
+            Object.entries({ nama, email, status, sekolah, fase, role }).filter(([, v]) => v !== undefined)
+        );
 
-        const hashed = await hashPassword(data.password);
+        if (password) perubahan.password = await hashPassword(password);
+        if (skillIds) perubahan.skills = skillIds.map(skillId => ({ id: skillId } as Skill));
 
-        return this.pesertaRepo.save({
-            ...peserta,
-            nama: data.nama,
-            email: data.email,
-            password: hashed,
-            sekolah: data.sekolah,
-            fase: data.fase,
-            role: data.role,
-            skills: skills
-        });
+        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
+    }
+
+    async updatePesertaBeberapa(id: number, data: Partial<PesertaBody>) {
+        const peserta = await this.pesertaRepo.findById(id);
+        if (!peserta) return null;
+
+        const { nama, email, password, status, sekolah, fase, skillIds } = data;
+
+        const namaFinal = nama ?? peserta.nama;
+        const sekolahFinal = sekolah ?? peserta.sekolah;
+        const duplikat = await this.pesertaRepo.findByNamaAndSekolah(namaFinal, sekolahFinal);
+        if (duplikat && duplikat.id !== id) {
+            throw new ConflictError(`Peserta bernama ${namaFinal} dari sekolah ${sekolahFinal} sudah terdaftar!`);
+        }
+
+        const perubahan: Partial<Peserta> = Object.fromEntries(
+            Object.entries({ nama, email, status, sekolah, fase }).filter(([, v]) => v !== undefined)
+        );
+
+        if (password) perubahan.password = await hashPassword(password);
+        if (skillIds) perubahan.skills = skillIds.map(skillId => ({ id: skillId } as Skill));
+
+        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
     }
 
     async hapusPeserta(id: number) {

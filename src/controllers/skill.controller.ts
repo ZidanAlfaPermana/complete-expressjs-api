@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { SkillService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response } from "../utils";
+import {AppError} from "../utils";
 
 const skillService = new SkillService();
 
@@ -15,8 +16,7 @@ export const getSkillById = asyncHandler(async (req: Request, res: Response) => 
     const skill = await skillService.getSkillById(id);
 
     if (!skill) {
-        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Skill dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, skill);
@@ -32,8 +32,7 @@ export const updateSkill = asyncHandler(async (req: Request, res: Response) => {
     const skillUpdated = await skillService.updateSkill(id, req.body);
 
     if (!skillUpdated) {
-        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Skill dengan id ${id} tidak ditemukan`);
     }
 
     response.diubah(res, skillUpdated, `Skill dengan id ${id} berhasil di edit`);
@@ -44,8 +43,7 @@ export const hapusSkill = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await skillService.hapusSkill(id);
 
     if (!deleted) {
-        response.gagal(res, `Skill dengan id ${id} tidak ditemukan`, [], 404);
-        return;
+        throw new AppError.NotFoundError(`Skill dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, [], "Data berhasil dihapus", 204);

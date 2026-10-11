@@ -141,8 +141,7 @@ export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     const deleted = await jurnalService.hapusJurnal(id);
 
     if (!deleted) {
-        response.gagal(res,`Jurnal dengan id ${id} tidak ditemukan`, [], 404)
-        return;
+        throw new AppError.NotFoundError(`Jurnal dengan id ${id} tidak ditemukan`);
     }
 
     response.sukses(res, [], 'data berhasil dihapus', 204)
