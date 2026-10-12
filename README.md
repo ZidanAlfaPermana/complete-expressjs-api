@@ -262,3 +262,15 @@ GET berjanji hanya membaca, dan banyak hal otomatis bergantung pada janji itu: c
 ```
 
 6. Hapus endpoint `/test/crash` setelah selesai.
+
+---
+
+## Jawaban Soal 5
+Apa beda Entity dan DTO? Kenapa Entity Peserta tidak boleh dipakai langsung
+sebagai bentuk body register?
+
+**Jawaban:**
+
+Entity itu cerminan tabel di database, jadi isinya lengkap: id, password hash, role, timestamp, dan sebagainya. DTO itu bentuk data yang sengaja dibatasi hanya untuk satu keperluan, misalnya register cuma butuh nama, email, dan password.
+
+Kalau Entity dipakai langsung sebagai body register, orang bisa menyelipkan field yang tidak seharusnya mereka isi, seperti role: "mentor" atau id sendiri, dan itu bisa lolos tanpa sengaja (namanya mass assignment). Selain itu, validasinya jadi campur aduk dan setiap perubahan di tabel ikut mengubah kontrak API.
