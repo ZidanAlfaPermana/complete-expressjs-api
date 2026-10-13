@@ -78,3 +78,15 @@ perbedaan yang paling mencolok pada versi Express 5 adalah
 2. Penulisan path route berubah.
 3. req.body bisa undefined
 ```
+
+# Minggu 14 - Hari Selasa
+
+## Soal 6:
+`kenapa value: false penting?`
+
+Secara default class-validator menyertakan nilai asli yang gagal validasi di objek error. Untuk field password, itu berarti password plaintext bisa ikut bocor ke response atau log. value: false (dan target: false) mencegahnya.
+
+## Soal 7: 
+`kenapa decorator tidak boleh dihapus?`
+
+class-validator hanya mengenali properti yang punya decorator. Properti tanpa decorator dianggap tidak dikenal: nilainya dibuang diam-diam (whitelist) atau request ditolak (forbidNonWhitelisted).

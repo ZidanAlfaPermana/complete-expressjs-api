@@ -3,8 +3,9 @@ import {Skill, Peserta} from "../entities";
 import {hashPassword} from "../utils/password";
 import {ListQuery} from "../utils/pagination";
 import {PesertaFilter} from "../repositories/peserta.repository";
-import {ConflictError} from "../utils/AppError";
-
+import {ConflictError, NotFoundError} from "../utils/AppError";
+import {UpdateProfilDto} from "../dto/peserta.dto";
+import {ValidationError} from "../utils/AppError";
 
 interface PesertaBody {
     nama: string;
@@ -15,6 +16,12 @@ interface PesertaBody {
     fase: number;
     role: 'peserta' | 'mentor';
     skillIds?: number[];
+}
+
+function hanyaYangDiisi<T extends object>(data: T): Partial<T> {
+    return Object.fromEntries(
+        Object.entries(data).filter(([, nilai]) => nilai !== undefined)
+    ) as Partial<T>;
 }
 
 export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
@@ -115,5 +122,17 @@ export class PesertaService {
     async hapusPeserta(id: number) {
         const result = await this.pesertaRepo.delete(id);
         return (result.affected ?? 0) > 0;
+    }
+
+    async ubahProfil(id: number, data: UpdateProfilDto) {
+        const peserta = await this.pesertaRepo.findById(id);
+        if (!peserta) throw new NotFoundError("Peserta");
+
+        const perubahan = hanyaYangDiisi(data);
+        if (Object.keys(perubahan).length === 0) {
+            throw new ValidationError([{ field: "body", pesan: "Minimal satu field harus diisi" }]);
+        }
+
+        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
     }
 }

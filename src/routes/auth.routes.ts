@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { AuthController } from "../controllers";
-import { ValidationMiddleware } from "../middlewares";
-import { RateLimit } from "../middlewares"
+import { validasi } from "../middlewares/validasi.middleware";
+import {loginLimiter} from "../middlewares/rateLimit.middleware";
+import {LoginDto, RegisterDto} from "../dto/auth.dto";
 
 const router = Router();
 
-router.post("/register", ValidationMiddleware.validasiRegister, AuthController.register);
-router.post("/login", RateLimit.loginLimiter, ValidationMiddleware.validasiLogin, AuthController.login);
+// src/routes/auth.routes.ts
+router.post("/register", validasi(RegisterDto), AuthController.register);
+router.post("/login", loginLimiter, validasi(LoginDto), AuthController.login);
 router.post("/refresh", AuthController.refresh);
 router.post("/logout", AuthController.logout);
 

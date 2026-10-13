@@ -67,7 +67,7 @@ export const updatePeserta = asyncHandler(async (req: Request, res: Response) =>
     response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
 });
 
-export const updateBeberapaDataPeserta = asyncHandler(async (req: Request, res: Response) => {
+export const updateProfileSaya = asyncHandler(async (req: Request, res: Response) => {
     const id = Number(req.user!.id);
 
     if (!authUtils.isUserSame(req.user!.id, id)) {
@@ -104,5 +104,13 @@ export const getProfilSaya = asyncHandler(async (req, res) => {
     const userId = req.user!.id;
 
     const peserta = await pesertaService.getPesertaById(userId);
+    response.sukses(res, peserta);
+});
+
+export const updateProfilePeserta = asyncHandler(async (req, res) => {
+
+    const userId = req.params!.id;
+
+    const peserta = await pesertaService.ubahProfil(Number(userId), req.body as PesertaBody);
     response.sukses(res, peserta);
 });

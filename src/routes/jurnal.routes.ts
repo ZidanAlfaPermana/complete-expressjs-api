@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { JurnalController } from "../controllers";
 import { ValidationMiddleware, AuthMiddleware, RoleMiddleware } from "../middlewares";
+import {JurnalDto} from "../dto/jurnal.dto";
 
 const router = Router();
 
@@ -11,8 +12,8 @@ router.get("/", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), 
 router.get("/peserta", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), JurnalController.getJurnalDenganPeserta);
 
 router.get("/:id", JurnalController.getJurnalById);
-router.post("/", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor", "peserta"), ValidationMiddleware.validasiJurnal, JurnalController.buatJurnal);
-router.put("/:id", ValidationMiddleware.validasiJurnal, JurnalController.updateJurnal);
+router.post("/", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor", "peserta"), ValidationMiddleware.validasi(JurnalDto), JurnalController.buatJurnal);
+router.put("/:id", ValidationMiddleware.validasi(JurnalDto), JurnalController.updateJurnal);
 router.patch("/:id/review", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), JurnalController.updateStatusReview);
 router.delete("/:id", JurnalController.hapusJurnal);
 

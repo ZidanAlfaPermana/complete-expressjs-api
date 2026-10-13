@@ -2,16 +2,14 @@ import { asyncHandler } from "../utils/asyncHandler";
 import * as authService from "../services/auth.service";
 import {response} from "../utils";
 import {UnauthorizedError} from "../utils/AppError";
+import {RegisterDto} from "../dto/auth.dto";
+import {ambilDto} from "../middlewares/validasi.middleware";
+import {dibuat} from "../utils/response";
 
 export const register = asyncHandler(async (req, res) => {
-    const data = await authService.register(req.body);
-
-    if (!data) {
-        response.gagal(res, data, [], 409);
-        return;
-    }
-
-    response.dibuat(res, data, "Registrasi berhasil");
+    const data = ambilDto<RegisterDto>(req);   // sudah bersih dan bertipe
+    const hasil = await authService.register(data);
+    dibuat(res, hasil, "Registrasi berhasil");
 });
 
 export const login = asyncHandler(async (req, res) => {
