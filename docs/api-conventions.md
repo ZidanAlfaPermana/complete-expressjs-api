@@ -7,8 +7,8 @@
 
 2. Method & status code
     - GET 200 | POST 201 + Location | PATCH 200 | DELETE 204
-    - 400 request rusak | 401 belum login | 403 tidak berhak | 404 tidak ada
-    - 409 konflik data | 422 validasi gagal | 429 terlalu banyak request | 500 bug server
+    - 400 hanya untuk body yang tidak bisa di-parse sama sekali (INVALID_JSON) | 401 belum login | 403 tidak berhak | 404 tidak ada
+    - 409 konflik data | 422 SEMUA kegagalan validasi DTO (body, query, maupun params) | 429 terlalu banyak request | 500 bug server
 
 3. Format response sukses
    { sukses: true, pesan, data, meta? }

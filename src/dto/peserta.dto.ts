@@ -11,9 +11,13 @@ import {
     Min,
     MinLength,
 } from "class-validator";
+import {ListQueryDto} from "./common.dto";
+import {Trim} from "./decorators/transform";
+import {Type} from "class-transformer";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MINIMAL_3_KARAKTER = /^\s*\S[\s\S]+\S\s*$/;
+export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
 
 export class PesertaDto {
     @IsString({ message: "Nama wajib diisi, minimal 3 karakter" })
@@ -75,4 +79,25 @@ export class UpdateProfilDto {
         message: "Format nomor telepon Indonesia tidak valid",
     })
     telepon?: string;
+}
+
+export class ListPesertaQueryDto extends ListQueryDto {
+    @IsOptional()
+    @IsIn(SORT_PESERTA, {
+        message: `sortBy harus salah satu dari: ${SORT_PESERTA.join(", ")}`,
+    })
+    sortBy: (typeof SORT_PESERTA)[number] = "createdAt";
+
+    @IsOptional()
+    @Trim()
+    @MaxLength(100, { message: "nama sekolah maksimal 100 kata"})
+    @IsString({ message: "sekolah harus berupa teks" })
+    sekolah?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt({ message: "fase harus berupa bilangan bulat" })
+    @Min(1, { message: "fase minimal 1" })
+    @Max(5, { message: "fase maksimal 5" })
+    fase?: number;
 }

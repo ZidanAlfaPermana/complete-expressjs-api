@@ -3,6 +3,8 @@ import { MentorService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response } from "../utils";
 import {AppError} from "../utils";
+import {ambilDto} from "../middlewares/validasi.middleware";
+import {IdParamDto} from "../dto/common.dto";
 
 const mentorService = new MentorService();
 
@@ -12,7 +14,7 @@ export const getSemuaMentor = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const getMentorById = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const mentor = await mentorService.getMentorById(id);
 
     if (!mentor) {
@@ -28,7 +30,7 @@ export const buatMentor = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateMentor = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const mentorUpdated = await mentorService.updateMentor(id, req.body);
 
     if (!mentorUpdated) {
@@ -39,7 +41,7 @@ export const updateMentor = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const hapusMentor = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const deleted = await mentorService.hapusMentor(id);
 
     if (!deleted) {

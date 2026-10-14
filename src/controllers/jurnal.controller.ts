@@ -3,8 +3,10 @@ import {JurnalService, PesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
 import { RoleMiddleware } from "../middlewares"
-import {SORT_JURNAL} from "../services/jurnal.service";
-import {buatMeta, parseListQuery} from "../utils/pagination";
+import {buatMeta} from "../utils/pagination";
+import {IdParamDto} from "../dto/common.dto";
+import {ambilDto} from "../middlewares/validasi.middleware";
+import {ListJurnalQueryDto} from "../dto/jurnal.dto";
 
 interface JurnalBody {
     pesertaId: number;
@@ -28,15 +30,15 @@ function parseTanggal(nilai: unknown, akhirHari = false): Date | undefined {
 }
 
 export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const lq = parseListQuery(req.query, SORT_JURNAL);
+    const query = ambilDto<ListJurnalQueryDto>(req, "query");
 
-    const pesertaId = req.query.pesertaId ? Number(req.query.pesertaId) : undefined;
-    const review = typeof req.query.review === "string" ? req.query.review : undefined;
-    const from = parseTanggal(req.query.from);
-    const to = parseTanggal(req.query.to, true);
-
-    const { data, total } = await jurnalService.getSemuaJurnal(lq, { pesertaId, review, from, to });
-    response.suksesDenganMeta(res, data, buatMeta(lq.page, lq.limit, total));
+    const { data, total } = await jurnalService.getSemuaJurnal(query, {
+        pesertaId: query.pesertaId,
+        review: query.statusReview ?? (query.belumDireview ? "belum" : undefined),
+        from: parseTanggal(query.from),
+        to: parseTanggal(query.to, true),
+    });
+    response.suksesDenganMeta(res, data, buatMeta(query.page, query.limit, total));
 });
 
 export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) => {
@@ -48,7 +50,7 @@ export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getJurnalById = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const jurnal = await jurnalService.getJurnalById(id);
     const userId = req.user!.id;
 
@@ -67,7 +69,7 @@ export const getJurnalById = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const jurnal = await pesertaService.getPesertaDenganJurnal(id);
     const userId = req.user!.id;
 
@@ -93,7 +95,7 @@ export const getJurnalDenganPeserta = asyncHandler(async (req: Request, res: Res
 
 
 export const updateStatusReview = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const { review } = req.body;
 
     const jurnalUpdated = await jurnalService.updateStatusReview(id, review);
@@ -112,7 +114,7 @@ export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const userId = req.user!.id;
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 
@@ -131,7 +133,7 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
     const userId = req.user!.id;
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 

@@ -1,6 +1,10 @@
-import { IsIn, IsInt, IsOptional, IsString, Matches, ValidateIf } from "class-validator";
+import {IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Matches, Min, ValidateIf} from "class-validator";
+import {ListQueryDto} from "./common.dto";
+import {Type} from "class-transformer";
+import {KeBoolean} from "./decorators/transform";
 
 const MINIMAL_10_KATA = /^\s*(\S+\s+){9,}\S+\s*$/;
+export const SORT_JURNAL = ["createdAt", "review"] as const;
 
 export class JurnalDto {
     @IsInt({ message: "ID peserta wajib diisi dan harus berupa angka" })
@@ -37,4 +41,33 @@ export class JurnalDto {
 
     @IsInt({ message: "ID reviewer (mentor) wajib diisi dan harus berupa angka" })
     reviewerId!: number;
+}
+
+export class ListJurnalQueryDto extends ListQueryDto {
+    @IsOptional()
+    @IsIn(SORT_JURNAL)
+    sortBy: (typeof SORT_JURNAL)[number] = "createdAt";
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    pesertaId?: number;
+
+    @IsOptional()
+    @IsIn(["belum", "sudah"], { message: "statusReview harus belum atau sudah" })
+    statusReview?: "belum" | "sudah";
+
+    @IsOptional()
+    @IsDateString({}, { message: "from harus berformat tanggal ISO, contoh 2026-09-01" })
+    from?: string;
+
+    @IsOptional()
+    @IsDateString({}, { message: "to harus berformat tanggal ISO, contoh 2026-09-30" })
+    to?: string;
+
+    @IsOptional()
+    @KeBoolean()
+    @IsBoolean({ message: "belumDireview harus true atau false" })
+    belumDireview?: boolean;
 }

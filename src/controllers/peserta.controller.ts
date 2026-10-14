@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import { PesertaService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response, authUtils, AppError } from "../utils";
-import {SORT_PESERTA} from "../services/peserta.service";
-import {buatMeta, parseListQuery} from "../utils/pagination";
+import {buatMeta} from "../utils/pagination";
 import {suksesDenganMeta} from "../utils/response";
+import {ambilDto} from "../middlewares/validasi.middleware";
+import {IdParamDto} from "../dto/common.dto";
+import {ListPesertaQueryDto} from "../dto/peserta.dto";
 
 interface PesertaBody {
     nama: string;
@@ -18,17 +20,20 @@ interface PesertaBody {
 
 const pesertaService = new PesertaService();
 
+// Controller: tidak ada lagi parseListQuery dan konversi manual
 export const getSemuaPeserta = asyncHandler(async (req, res) => {
-    const lq = parseListQuery(req.query, SORT_PESERTA);
-    const sekolah = typeof req.query.sekolah === "string" ? req.query.sekolah : undefined;
-    const fase = req.query.fase ? Number(req.query.fase) : undefined;
+    const query = ambilDto<ListPesertaQueryDto>(req, "query");
 
-    const { data, total } = await pesertaService.getSemuaPeserta(lq, { sekolah, fase });
-    suksesDenganMeta(res, data, buatMeta(lq.page, lq.limit, total));
+    const { data, total } = await pesertaService.getSemuaPeserta(query, {
+        sekolah: query.sekolah,
+        fase: query.fase,
+    });
+
+    suksesDenganMeta(res, data, buatMeta(query.page, query.limit, total));
 });
 
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
 
     if (!authUtils.isUserSame(req.user!.id, id) && req.user?.role !== "mentor") {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
@@ -52,7 +57,7 @@ export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>
 });
 
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
 
     if (!authUtils.isUserSame(req.user!.id, id)) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
@@ -84,7 +89,7 @@ export const updateProfileSaya = asyncHandler(async (req: Request, res: Response
 });
 
 export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
+    const { id } = ambilDto<IdParamDto>(req, "params");
 
     if (req.user!.role !== "mentor") {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
