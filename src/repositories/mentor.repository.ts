@@ -12,6 +12,10 @@ export class MentorRepository {
         return this.repo.findOneBy({ id });
     }
 
+    async findByEmail(email: string) {
+        return this.repo.findOneBy({ email });
+    }
+
     async save(data: Partial<Mentor>) {
         return this.repo.save(data);
     }

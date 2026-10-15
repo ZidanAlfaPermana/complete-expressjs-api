@@ -1,9 +1,10 @@
-import { JurnalRepository } from "../repositories";
+import {JurnalRepository, MentorRepository} from "../repositories";
 import { AppDataSource } from "../config/database.config";
-import { Peserta } from "../entities";
+import {Mentor, Peserta} from "../entities";
 import {JurnalFilter} from "../repositories/jurnal.repository";
 import {ListQuery} from "../utils/pagination";
 import {ConflictError, NotFoundError} from "../utils/AppError";
+import {CreateJurnalDto} from "../dto/jurnal.dto";
 
 interface JurnalBody {
     pesertaId: number;
@@ -21,6 +22,7 @@ export const SORT_JURNAL = ["createdAt", "statusReview"] as const;
 export class JurnalService {
     private jurnalRepo = new JurnalRepository();
     private pesertaRepo = AppDataSource.getRepository(Peserta);
+    private mentorRepo = new MentorRepository();
 
     async getSemuaJurnal(lq: ListQuery, filter: JurnalFilter) {
         return this.jurnalRepo.findPaginated(lq, filter);
@@ -36,11 +38,19 @@ export class JurnalService {
         return String(total);
     }
 
-    async updateStatusReview(id: number, review: "sudah" | "belum") {
+    async updateReviewJurnal(id: number, statusReview: "sudah" | "belum", catatan?: string, emailReviewer?: string) {
         const jurnal = await this.jurnalRepo.findById(id);
         if (!jurnal) return null;
 
-        jurnal.review = review;
+        let reviewerId: number | null = null;
+        if (statusReview === "sudah" && emailReviewer) {
+            const mentor = await this.mentorRepo.findByEmail(emailReviewer);
+            reviewerId = mentor?.id ?? null;
+        }
+
+        jurnal.statusReview = statusReview;
+        jurnal.catatanMentor = statusReview === "sudah" ? catatan! : null;
+        jurnal.reviewerId = reviewerId;
         return this.jurnalRepo.save(jurnal);
     }
 
@@ -66,22 +76,10 @@ export class JurnalService {
         return this.jurnalRepo.getJurnalDenganPeserta();
     }
 
-    async buatJurnal(data: JurnalBody) {
-        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
-        if (!pesertaExists) {
-            throw new ConflictError(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
-        }
-
-        return this.jurnalRepo.save({
-            pesertaId: data.pesertaId,
-            status: data.status,
-            kegiatan: data.kegiatan,
-            hambatan: data.hambatan,
-            rencanaBesok: data.rencanaBesok,
-            linkCommit: data.linkCommit,
-            review: data.review,
-            reviewerId: data.reviewerId
-        });
+    async buatJurnal(pesertaId: number, dto: CreateJurnalDto) {
+        return this.jurnalRepo.save(
+            await this.jurnalRepo.save({...dto, pesertaId})
+        );
     }
 
     async updateJurnal(id: number, data: JurnalBody) {

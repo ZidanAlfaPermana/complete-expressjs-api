@@ -5,6 +5,11 @@ import { Mentor } from "./Mentor.entity";
 export type StatusReview = "belum" | "sudah";
 export type Status = "belum" | "selesai" | "proses";
 
+export interface LampiranItem {
+    url: string;
+    keterangan?: string;
+}
+
 @Entity("jurnal_harian")
 export class JurnalHarian {
     @PrimaryGeneratedColumn()
@@ -26,7 +31,7 @@ export class JurnalHarian {
     linkCommit?: string;
 
     @Column({ type: "enum", enum: ["belum", "sudah"], default: "belum" })
-    review!: StatusReview;
+    statusReview!: StatusReview;
 
     @Column({ type: "enum", enum: ["belum", "selesai", "proses"], default: "belum" })
     status!: Status;
@@ -39,7 +44,13 @@ export class JurnalHarian {
     peserta!: Peserta;
 
     @Column({ name: "reviewerId", nullable: true })
-    reviewerId?: number;
+    reviewerId?: number | null;
+
+    @Column({ type: "jsonb", nullable: true })
+    lampiran!: LampiranItem[] | null;
+
+    @Column({ type: "text", nullable: true })
+    catatanMentor?: string | null;
 
     @ManyToOne(() => Mentor, (mentor) => mentor.jurnalList, {
         onDelete: "SET NULL"

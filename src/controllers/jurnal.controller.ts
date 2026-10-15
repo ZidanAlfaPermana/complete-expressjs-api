@@ -6,7 +6,9 @@ import { RoleMiddleware } from "../middlewares"
 import {buatMeta} from "../utils/pagination";
 import {IdParamDto} from "../dto/common.dto";
 import {ambilDto} from "../middlewares/validasi.middleware";
-import {ListJurnalQueryDto} from "../dto/jurnal.dto";
+import {CreateJurnalDto, ListJurnalQueryDto, ReviewJurnalDto} from "../dto/jurnal.dto";
+import {serialisasi} from "../utils/serialisasi";
+import {JurnalResponseDto} from "../dto/response/jurnal.response";
 
 interface JurnalBody {
     pesertaId: number;
@@ -34,11 +36,11 @@ export const getSemuaJurnal = asyncHandler(async (req: Request, res: Response) =
 
     const { data, total } = await jurnalService.getSemuaJurnal(query, {
         pesertaId: query.pesertaId,
-        review: query.statusReview ?? (query.belumDireview ? "belum" : undefined),
+        statusReview: query.statusReview ?? (query.belumDireview ? "belum" : undefined),
         from: parseTanggal(query.from),
         to: parseTanggal(query.to, true),
     });
-    response.suksesDenganMeta(res, data, buatMeta(query.page, query.limit, total));
+    response.suksesDenganMeta(res, serialisasi(JurnalResponseDto, data), buatMeta(query.page, query.limit, total));
 });
 
 export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) => {
@@ -94,23 +96,31 @@ export const getJurnalDenganPeserta = asyncHandler(async (req: Request, res: Res
 });
 
 
-export const updateStatusReview = asyncHandler(async (req: Request, res: Response) => {
+export const updateReviewJurnal = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
-    const { review } = req.body;
+    const { statusReview, catatan } = ambilDto<ReviewJurnalDto>(req, "body");
 
-    const jurnalUpdated = await jurnalService.updateStatusReview(id, review);
+    const jurnalUpdated = await jurnalService.updateReviewJurnal(
+        id,
+        statusReview,
+        catatan,
+        req.user?.email
+    );
 
     if (!jurnalUpdated) {
-        response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
+        response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404);
         return;
     }
 
-    response.diubah(res, jurnalUpdated)
+    response.diubah(res, serialisasi(JurnalResponseDto, jurnalUpdated));
 });
 
 export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const jurnalBaru = await jurnalService.buatJurnal(req.body as JurnalBody);
-    response.dibuat(res, jurnalBaru);
+    const dto = ambilDto<CreateJurnalDto>(req, "body");
+    const pesertaId = req.user!.id;
+
+    const jurnal = await jurnalService.buatJurnal(pesertaId, dto);
+    response.dibuat(res, serialisasi(JurnalResponseDto, jurnal));
 });
 
 export const updateJurnal = asyncHandler(async (req: Request, res: Response) => {

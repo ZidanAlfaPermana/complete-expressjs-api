@@ -7,6 +7,8 @@ import {suksesDenganMeta} from "../utils/response";
 import {ambilDto} from "../middlewares/validasi.middleware";
 import {IdParamDto} from "../dto/common.dto";
 import {ListPesertaQueryDto} from "../dto/peserta.dto";
+import {PesertaResponseDto} from "../dto/response/peserta.response";
+import {serialisasi} from "../utils/serialisasi";
 
 interface PesertaBody {
     nama: string;
@@ -29,7 +31,7 @@ export const getSemuaPeserta = asyncHandler(async (req, res) => {
         fase: query.fase,
     });
 
-    suksesDenganMeta(res, data, buatMeta(query.page, query.limit, total));
+    suksesDenganMeta(res, serialisasi(PesertaResponseDto, data), buatMeta(query.page, query.limit, total));
 });
 
 export const getPesertaById = asyncHandler(async (req: Request, res: Response) => {
@@ -45,7 +47,7 @@ export const getPesertaById = asyncHandler(async (req: Request, res: Response) =
         throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
-    response.sukses(res, peserta);
+    response.sukses(res, serialisasi(PesertaResponseDto, peserta));
 });
 
 export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>, res: Response) => {
@@ -53,7 +55,7 @@ export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>
     res
         .status(201)
         .location(`/api/v1/peserta/${pesertaBaru.id}`)
-        .json({ sukses: true, pesan: "Peserta berhasil dibuat", data: pesertaBaru });
+        .json({ sukses: true, pesan: "Peserta berhasil dibuat", data: serialisasi(PesertaResponseDto, pesertaBaru) });
 });
 
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -69,7 +71,7 @@ export const updatePeserta = asyncHandler(async (req: Request, res: Response) =>
         throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
-    response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
+    response.diubah(res, serialisasi(PesertaResponseDto, pesertaUpdated), `Peserta dengan id ${id} berhasil di edit`);
 });
 
 export const updateProfileSaya = asyncHandler(async (req: Request, res: Response) => {
@@ -85,7 +87,7 @@ export const updateProfileSaya = asyncHandler(async (req: Request, res: Response
         throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
-    response.diubah(res, pesertaUpdated, `Peserta dengan id ${id} berhasil di edit`);
+    response.diubah(res, serialisasi(PesertaResponseDto, pesertaUpdated), `Peserta dengan id ${id} berhasil di edit`);
 });
 
 export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -109,7 +111,7 @@ export const getProfilSaya = asyncHandler(async (req, res) => {
     const userId = req.user!.id;
 
     const peserta = await pesertaService.getPesertaById(userId);
-    response.sukses(res, peserta);
+    response.sukses(res, serialisasi(PesertaResponseDto, peserta));
 });
 
 export const updateProfilePeserta = asyncHandler(async (req, res) => {
@@ -117,5 +119,5 @@ export const updateProfilePeserta = asyncHandler(async (req, res) => {
     const userId = req.params!.id;
 
     const peserta = await pesertaService.ubahProfil(Number(userId), req.body as PesertaBody);
-    response.sukses(res, peserta);
+    response.sukses(res, serialisasi(PesertaResponseDto, peserta));
 });

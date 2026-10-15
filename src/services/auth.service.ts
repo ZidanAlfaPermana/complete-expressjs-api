@@ -13,6 +13,7 @@ interface RegisterInput {
     sekolah: string;
     email: string;
     password: string;
+    konfirmasiPassword: string;
 }
 
 interface LoginInput {
@@ -50,6 +51,7 @@ export async function login(data: LoginInput) {
 }
 
 export async function register(data: RegisterInput) {
+    const { konfirmasiPassword, ...dataPeserta } = data;
     const sudahAda = await repo
   .createQueryBuilder("p")
   .addSelect("p.password")

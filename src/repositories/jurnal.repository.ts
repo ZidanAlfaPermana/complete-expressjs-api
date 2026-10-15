@@ -5,7 +5,7 @@ import { ListQuery } from "../utils/pagination";
 
 export interface JurnalFilter {
     pesertaId?: number;
-    review?: string;
+    statusReview?: string;
     from?: Date;
     to?: Date;
 }
@@ -21,7 +21,7 @@ export class JurnalRepository {
         const where: FindOptionsWhere<JurnalHarian> = {};
 
         if (filter.pesertaId) where.pesertaId = filter.pesertaId;
-        if (filter.review) where.review = filter.review as any;
+        if (filter.statusReview) where.statusReview = filter.statusReview as any;
 
         if (filter.from && filter.to) where.createdAt = Between(filter.from, filter.to);
         else if (filter.from) where.createdAt = MoreThanOrEqual(filter.from);
@@ -41,8 +41,8 @@ export class JurnalRepository {
         return this.repo.count();
     }
 
-    async countByReview(review: "sudah" | "belum") {
-        return this.repo.count({ where: { review } });
+    async countByReview(statusReview: "sudah" | "belum") {
+        return this.repo.count({ where: { statusReview } });
     }
 
     async findById(id: number) {
