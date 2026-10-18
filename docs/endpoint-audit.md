@@ -1261,3 +1261,20 @@
     }
 }
 ```
+
+---
+
+# Endpoint Audit
+
+| No | Method | Path | Login? | Role | Body DTO | Query DTO | Params DTO | Response DTO | Status | Catatan |
+|----|--------|------|--------|------|----------|-----------|------------|--------------|--------|---------|
+| 1 | POST | /auth/register | Tidak | - | RegisterDto | - | - | PesertaResponseDto | ✅ | |
+| 2 | POST | /auth/login | Tidak | - | LoginDto | - | - | TokenResponseDto | ✅ | |
+| 3 | GET | /peserta | Ya | mentor | - | ListPesertaQueryDto | - | PesertaResponseDto[] | ✅ | |
+| 4 | GET | /peserta/:id | Ya | mentor | - | - | IdParamDto | PesertaResponseDto | ✅ | |
+| 5 | GET | /peserta/me | Ya | peserta | - | - | - | PesertaResponseDto | ✅ | |
+| 6 | PATCH | /peserta/me | Ya | peserta | UpdateProfilDto | - | - | PesertaResponseDto | ✅ | |
+| 7 | GET | /jurnal | Ya | mentor | - | ListJurnalQueryDto | - | JurnalResponseDto[] | ✅ | |
+| 8 | POST | /jurnal | Ya | peserta | CreateJurnalDto | - | - | JurnalResponseDto | ✅ | |
+| 9 | PATCH | /jurnal/:id | Ya | peserta | UpdateJurnalDto | - | IdParamDto | JurnalResponseDto | ✅ | |
+| 10 | DELETE | /jurnal/:id | Ya | peserta | - | - | IdParamDto | - (204) | ✅ | |

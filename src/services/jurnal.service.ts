@@ -4,7 +4,7 @@ import {Mentor, Peserta} from "../entities";
 import {JurnalFilter} from "../repositories/jurnal.repository";
 import {ListQuery} from "../utils/pagination";
 import {ConflictError, NotFoundError} from "../utils/AppError";
-import {CreateJurnalDto} from "../dto/jurnal.dto";
+import {JurnalDto} from "../dto/jurnal.dto";
 
 interface JurnalBody {
     pesertaId: number;
@@ -23,6 +23,15 @@ export class JurnalService {
     private jurnalRepo = new JurnalRepository();
     private pesertaRepo = AppDataSource.getRepository(Peserta);
     private mentorRepo = new MentorRepository();
+
+    private async ambilJurnalYangBolehDiubah(id: number) {
+        const jurnal = await this.jurnalRepo.findById(id);
+        if (!jurnal) return null;
+        if (jurnal.statusReview === "sudah") {
+            throw new ConflictError("Jurnal yang sudah direview tidak dapat diedit");
+        }
+        return jurnal;
+    }
 
     async getSemuaJurnal(lq: ListQuery, filter: JurnalFilter) {
         return this.jurnalRepo.findPaginated(lq, filter);
@@ -76,25 +85,24 @@ export class JurnalService {
         return this.jurnalRepo.getJurnalDenganPeserta();
     }
 
-    async buatJurnal(pesertaId: number, dto: CreateJurnalDto) {
+    async buatJurnal(pesertaId: number, dto: JurnalDto) {
         return this.jurnalRepo.save(
             await this.jurnalRepo.save({...dto, pesertaId})
         );
     }
 
-    async updateJurnal(id: number, data: JurnalBody) {
-        const jurnal = await this.jurnalRepo.findById(id);
+    async updateJurnal(id: number, dto: JurnalDto) {
+        const jurnal = await this.ambilJurnalYangBolehDiubah(id);
         if (!jurnal) return null;
+        Object.assign(jurnal, { hambatan: null, linkCommit: null, lampiran: null, ...dto });
+        return this.jurnalRepo.save(jurnal);
+    }
 
-        const pesertaExists = await this.pesertaRepo.findOneBy({ id: data.pesertaId });
-        if (!pesertaExists) {
-            throw new NotFoundError(`Peserta dengan id ${data.pesertaId} tidak ditemukan`);
-        }
-
-        return this.jurnalRepo.save({
-            ...jurnal,
-            ...data
-        });
+    async updateBeberapaDataJurnal(id: number, dto: JurnalDto) {
+        const jurnal = await this.ambilJurnalYangBolehDiubah(id);
+        if (!jurnal) return null;
+        Object.assign(jurnal, dto);
+        return this.jurnalRepo.save(jurnal);
     }
 
     async hapusJurnal(id: number) {

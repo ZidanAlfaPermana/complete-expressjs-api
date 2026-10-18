@@ -19,7 +19,7 @@ import {KeBoolean, Trim} from "./decorators/transform";
 const MINIMAL_10_KATA = /^\s*(\S+\s+){9,}\S+\s*$/;
 export const SORT_JURNAL = ["createdAt", "statusReview"] as const;
 
-export class CreateJurnalDto {
+export class JurnalDto {
     @Trim()
     @IsString({ message: "Kegiatan harus berupa teks" })
     @MinLength(10, { message: "Kegiatan minimal 10 karakter" })

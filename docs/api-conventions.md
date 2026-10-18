@@ -28,3 +28,15 @@
 7. Penamaan
     - Bahasa Indonesia untuk field dan pesan
     - camelCase untuk nama field JSON
+
+8. Validasi (422)
+   - Semua input (body, query, params) divalidasi lewat DTO sebelum masuk controller.
+   - Kegagalan validasi → HTTP 422, code VALIDATION_ERROR, detail per field di `details`.
+
+9. Whitelist
+   - Properti yang tidak dideklarasikan di DTO ditolak (422), bukan dibuang diam-diam.
+   - Contoh: `{"role":"mentor"}` pada register → 422.
+
+10. Response DTO
+   - Response peserta dan jurnal wajib lewat PesertaResponseDto / JurnalResponseDto.
+  - Hanya field yang diberi @Expose() yang keluar. Password tidak pernah dikirim.

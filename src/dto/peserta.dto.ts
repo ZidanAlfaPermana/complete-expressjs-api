@@ -22,6 +22,7 @@ export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
 export class PesertaDto {
     @IsString({ message: "Nama wajib diisi, minimal 3 karakter" })
     @Matches(MINIMAL_3_KARAKTER, { message: "Nama wajib diisi, minimal 3 karakter" })
+    @MaxLength(50)
     nama!: string;
 
     @IsNotEmpty({ message: "Sekolah wajib diisi" })

@@ -6,7 +6,7 @@ import { RoleMiddleware } from "../middlewares"
 import {buatMeta} from "../utils/pagination";
 import {IdParamDto} from "../dto/common.dto";
 import {ambilDto} from "../middlewares/validasi.middleware";
-import {CreateJurnalDto, ListJurnalQueryDto, ReviewJurnalDto} from "../dto/jurnal.dto";
+import {JurnalDto, ListJurnalQueryDto, ReviewJurnalDto} from "../dto/jurnal.dto";
 import {serialisasi} from "../utils/serialisasi";
 import {JurnalResponseDto} from "../dto/response/jurnal.response";
 
@@ -116,7 +116,7 @@ export const updateReviewJurnal = asyncHandler(async (req: Request, res: Respons
 });
 
 export const buatJurnal = asyncHandler(async (req: Request, res: Response) => {
-    const dto = ambilDto<CreateJurnalDto>(req, "body");
+    const dto = ambilDto<JurnalDto>(req, "body");
     const pesertaId = req.user!.id;
 
     const jurnal = await jurnalService.buatJurnal(pesertaId, dto);
@@ -133,6 +133,25 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
     }
 
     const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody);
+
+    if (!jurnalUpdated) {
+        response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
+        return;
+    }
+
+    response.diubah(res, jurnalUpdated, `Jurnal dengan id ${id} berhasil di edit`)
+});
+
+export const updateJurnalBeberapa = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = ambilDto<IdParamDto>(req, "params");
+    const userId = req.user!.id;
+    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
+
+    if (req.user?.role !== "mentor" && !authUtils.isUserSame(userId, userIdFromJurnal)) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    }
+
+    const jurnalUpdated = await jurnalService.updateBeberapaDataJurnal(id, req.body as JurnalBody);
 
     if (!jurnalUpdated) {
         response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)

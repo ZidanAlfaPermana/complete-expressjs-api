@@ -1,148 +1,133 @@
-# DTO Cases: Di Mana Tiap Aturan Validasi Ditaruh
+# DTO Cases: Payload Valid dan Tidak Valid per DTO
 
 ## Ringkasan
 
-| # | Aturan | Tempat | Status HTTP saat dilanggar |
-|---|--------|--------|----------------------------|
-| a | Format email valid | DTO | 422 |
-| b | Email belum dipakai akun lain | Database (unique constraint) | 409 |
-| c | Nama minimal 3 karakter | DTO | 422 |
-| d | Peserta hanya boleh mengedit jurnal miliknya | Service | 403 |
-| e | Fase bernilai 1 sampai 5 | DTO | 422 |
-| f | Password minimal 8 karakter | DTO | 422 |
-| g | `pesertaId` pada jurnal menunjuk peserta yang ada | Database (foreign key) | 409 |
-| h | Jurnal yang sudah direview tidak boleh diedit lagi | Service | 409 (atau 403) |
+| # | DTO | Endpoint |
+|---|-----|----------|
+| 1 | RegisterDto | POST /register |
+| 2 | LoginDto | POST /login |
+| 3 | PesertaDto | POST /peserta |
+| 4 | UpdateProfilDto | PATCH /peserta/me |
+| 5 | ListPesertaQueryDto | GET /peserta |
+| 6 | CreateJurnalDto | POST /jurnal |
+| 7 | UpdateJurnalDto | PATCH /jurnal/:id |
+| 8 | ReviewJurnalDto | PATCH /jurnal/:id/review |
+| 9 | ListJurnalQueryDto | GET /jurnal |
 
-## Detail per aturan
+## Detail per DTO
 
-### a. Format email valid
+### 1. RegisterDto
 
-- **Tempat:** DTO
-- **Alasan:** Ini murni cek bentuk teks. Tidak perlu database atau data lain, jadi bisa ditolak paling awal dan murah, sebelum menyentuh service.
-- **Implementasi:**
+| # | Payload | Harapan | Hasil nyata                                  |
+|---|---------|---------|----------------------------------------------|
+| V1 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"budi@mail.com","password":"rahasia123","konfirmasiPassword":"rahasia123"}` | 201 | 201 |
+| V2 | `{"nama":"  Siti  ","sekolah":"SMKN 5 Malang","email":"  Siti@Mail.COM  ","password":"rahasia123","konfirmasiPassword":"rahasia123"}` | 201 | 201 |
+| V3 | `{"nama":"Ani","sekolah":"SMK","email":"ani@mail.com","password":"abcd1234","konfirmasiPassword":"abcd1234"}` | 201 | 201 |
+| I1 | `{}` | 422 | 422 VALIDATION_ERROR, nama: Nama maksimal 100 karakter, nama: Nama minimal 3 karakter |
+| I2 | `{"nama":"      ","sekolah":"SMKN 5 Malang","email":"a@mail.com","password":"rahasia123","konfirmasiPassword":"rahasia123"}` | 422 | 422 VALIDATION_ERROR, nama: Nama minimal 3 karakter |
+| I3 | `{"nama":"Budi","sekolah":"SMKN 5 Malang","email":"a@mail.com","password":"abcdefgh","konfirmasiPassword":"abcdefgh"}` | 422 | 422 VALIDATION_ERROR, password: Password harus mengandung huruf dan angka |
+| I4 | `{"nama":"Budi","sekolah":"SMKN 5 Malang","email":"a@mail.com","password":"rahasia123","konfirmasiPassword":"beda12345"}` | 422 | 422 VALIDATION_ERROR, konfirmasiPassword: Konfirmasi password tidak cocok |
+| I5 | `{"nama":"Budi","sekolah":"SMKN 5 Malang","email":"a@mail.com","password":"rahasia123","konfirmasiPassword":"rahasia123","role":"mentor"}` | 422 | 422 VALIDATION_ERROR, role: Properti ini tidak diizinkan |
 
-  ```ts
-  @IsEmail({}, { message: "Format email tidak valid" })
-  email!: string;
-  ```
+### 2. LoginDto
 
-- **Lapisan cadangan:** tidak perlu. Database hanya menyimpan string, bukan memeriksa format.
+| # | Payload | Harapan | Hasil nyata |
+|---|---------|---------|-------------|
+| V1 | `{"email":"budi@mail.com","password":"rahasia123"}` | 200 | 200 |
+| V2 | `{"email":"ani@mail.com","password":"abcd1234"}` | 200 | 200 |
+| V3 | `{"email":"budi@mail.com","password":"salah-total"}` | 401 | 401 UNAUTHORIZED, Email atau password salah |
+| I1 | `{}` | 422 | 422 VALIDATION_ERROR, email: Format email tidak valid, password: Password wajib diisi |
+| I2 | `{"email":"bukan-email","password":"x"}` | 422 | 422 VALIDATION_ERROR, email: Format email tidak valid |
+| I3 | `{"email":"budi@mail.com"}` | 422 | 422 VALIDATION_ERROR, password: Password wajib diisi, password: Password harus berupa teks |
+| I4 | `{"email":["a@b.co"],"password":"x"}` | 422 | 422 VALIDATION_ERROR, email: Format email tidak valid |
+| I5 | `{"email":"budi@mail.com","password":""}` | 422 | 422 VALIDATION_ERROR, password: Password wajib diisi |
 
-### b. Email belum dipakai akun lain
+### 3. PesertaDto
 
-- **Tempat:** Database (unique constraint)
-- **Alasan:** Aturan ini bergantung pada data lain di tabel. DTO tidak bisa tahu isi tabel. Pengecekan di service (cari email lalu insert) punya celah: dua request bersamaan bisa sama-sama lolos cek, lalu keduanya insert. Hanya unique constraint yang menjamin tidak ada duplikat.
-- **Implementasi:** sudah ada di entity `Peserta`:
+| # | Payload | Harapan | Hasil nyata                                                                                |
+|---|---------|---------|--------------------------------------------------------------------------------------------|
+| V1 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"p1@mail.com","status":"aktif","telepon":"081234567890","fase":1,"role":"peserta","password":"rahasia123"}` | 201 | 201                                                                                        |
+| V2 | `{"nama":"Siti Aminah","sekolah":"SMKN 5 Malang","email":"p2@mail.com","status":"lulus","telepon":"081234567890","fase":5,"skillIds":[],"role":"peserta","password":"rahasia123"}` | 201 | 201                                                                                        |
+| V3 | `{"nama":"Pak Mentor","sekolah":"SMKN 5 Malang","email":"p3@mail.com","status":"aktif","telepon":"081234567890","fase":1,"role":"mentor","password":"rahasia123"}` | 201 | 201                                                                                        |
+| I1 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"p4@mail.com","status":"aktif","telepon":"081234567890","fase":6,"role":"peserta","password":"rahasia123"}` | 422 | 422 VALIDATION_ERROR, fase: Fase wajib diisi, dan fase hanya ada fase 1 sampai 5           |
+| I2 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"p4@mail.com","status":"magang","telepon":"081234567890","fase":1,"role":"peserta","password":"rahasia123"}` | 422 | 422 VALIDATION_ERROR, status: Status tidak valid. harus berisi aktif, lulus, atau berhenti |
+| I3 | `{"nama":"ab","sekolah":"SMKN 5 Malang","email":"p4@mail.com","status":"aktif","telepon":"081234567890","fase":1,"role":"peserta","password":"rahasia123"}` | 422 | 422 VALIDATION_ERROR, nama: Nama wajib diisi, minimal 3 karakter                           |
+| I4 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"p4@mail.com","status":"aktif","telepon":"081234567890","fase":1,"role":"admin","password":"rahasia123"}` | 422 | 422 VALIDATION_ERROR, role: Role wajib diisi, dengan memilih role peserta atau mentor      |
+| I5 | `{"nama":"Budi Santoso","sekolah":"SMKN 5 Malang","email":"p4@mail.com","status":"aktif","telepon":"081234567890","fase":1,"role":"peserta","password":"rahasia123","id":99}` | 422 | 422 VALIDATION_ERROR, id: Properti ini tidak diizinkan                                     |
 
-  ```ts
-  @Column({ type: "varchar", length: 100, unique: true })
-  email!: string;
-  ```
+### 4. UpdateProfilDto
 
-  Error `duplicate key value violates unique constraint` ditangkap error handler dan diubah menjadi 409 dengan pesan yang ramah.
-- **Lapisan cadangan:** service boleh mengecek lebih dulu (`findByEmail`) hanya untuk memberi pesan error lebih jelas. Tapi itu pelengkap, bukan penjaga utama.
+| # | Payload | Harapan | Hasil nyata |
+|---|---------|---------|-------------|
+| V1 | `{"nama":"Budi Baru"}` | 200 | 200 |
+| V2 | `{"telepon":"081234567890"}` | 200 | 200 |
+| V3 | `{"nama":"Budi Baru","sekolah":"SMKN 1 Malang","telepon":"081234567890"}` | 200 | 200 |
+| I1 | `{"nama":"ab"}` | 422 | 422 VALIDATION_ERROR, nama: Nama minimal 3 karakter |
+| I2 | `{"nama":123}` | 422 | 422 VALIDATION_ERROR, nama: Nama maksimal 100 karakter, nama: Nama minimal 3 karakter |
+| I3 | `{"telepon":"12345"}` | 422 | 422 VALIDATION_ERROR, telepon: Format nomor telepon Indonesia tidak valid |
+| I4 | `{"sekolah":"a"}` | 422 | 422 VALIDATION_ERROR, sekolah: sekolah must be longer than or equal to 3 characters |
+| I5 | `{"role":"mentor"}` | 422 | 422 VALIDATION_ERROR, role: Properti ini tidak diizinkan |
 
-### c. Nama minimal 3 karakter
+### 5. ListPesertaQueryDto
 
-- **Tempat:** DTO
-- **Alasan:** Aturan panjang teks bisa diputuskan dari isi request saja.
-- **Implementasi:**
+| # | Query | Harapan | Hasil nyata |
+|---|-------|---------|-------------|
+| V1 | `?sekolah=SMKN 5 Malang` | 200 | 200 |
+| V2 | `?sortBy=nama&fase=3` | 200 | 200 |
+| V3 | (tanpa query) | 200 | 200 |
+| I1 | `?sortBy=password` | 422 | 422 VALIDATION_ERROR, sortBy: sortBy harus salah satu dari: nama, fase, createdAt |
+| I2 | `?fase=6` | 422 | 422 VALIDATION_ERROR, fase: fase maksimal 5 |
+| I3 | `?fase=abc` | 422 | 422 VALIDATION_ERROR, fase: fase maksimal 5, fase: fase minimal 1 |
+| I4 | `?sekolah=a&sekolah=b` | 422 | 422 VALIDATION_ERROR, sekolah: sekolah harus berupa teks, sekolah: nama sekolah maksimal 100 kata |
 
-  ```ts
-  @Trim()
-  @IsString()
-  @MinLength(3, { message: "Nama minimal 3 karakter" })
-  @MaxLength(100)
-  nama!: string;
-  ```
+### 6. CreateJurnalDto
 
-  `@Trim()` ditaruh sebelum validasi supaya `"  ab "` tidak lolos sebagai 3 karakter.
-- **Lapisan cadangan:** batas atas sudah dijaga `varchar(100)` di database. Batas bawah tidak perlu dijaga di database.
+| # | Payload | Harapan | Hasil nyata |
+|---|---------|---------|-------------|
+| V1 | `{"kegiatan":"Belajar membuat endpoint dengan DTO","rencanaBesok":"Menulis test"}` | 201 | 201 |
+| V2 | `{"kegiatan":"Belajar membuat endpoint dengan DTO","hambatan":"Sempat bingung","rencanaBesok":"Menulis test","linkCommit":"https://github.com/user/repo/commit/abc123","lampiran":[{"url":"https://example.com/a.png","keterangan":"screenshot"}]}` | 201 | 201 |
+| V3 | `{"kegiatan":"1234567890","rencanaBesok":"12345"}` | 201 | 201 |
+| I1 | `{}` | 422 | 422 VALIDATION_ERROR, kegiatan: Kegiatan maksimal 2000 karakter, kegiatan: Kegiatan minimal 10 karakter |
+| I2 | `{"kegiatan":"pendek","rencanaBesok":"Menulis test"}` | 422 | 422 VALIDATION_ERROR, kegiatan: Kegiatan minimal 10 karakter |
+| I3 | `{"kegiatan":"Belajar membuat endpoint dengan DTO","rencanaBesok":"Menulis test","linkCommit":"bukan-url"}` | 422 | 422 VALIDATION_ERROR, linkCommit: Link commit harus berupa URL yang valid |
+| I4 | `{"kegiatan":"Belajar membuat endpoint dengan DTO","rencanaBesok":"Menulis test","lampiran":[{"url":"bukan-url"}]}` | 422 | 422 VALIDATION_ERROR, lampiran.0.url: URL lampiran tidak valid |
+| I5 | `{"kegiatan":"Belajar membuat endpoint dengan DTO","rencanaBesok":"Menulis test","pesertaId":2}` | 422 | 422 VALIDATION_ERROR, pesertaId: Properti ini tidak diizinkan |
 
-### d. Peserta hanya boleh mengedit jurnal miliknya
+### 7. UpdateJurnalDto
 
-- **Tempat:** Service
-- **Alasan:** Ini aturan otorisasi. Butuh dua hal yang tidak dimiliki DTO maupun database: identitas user yang login (dari token) dan pemilik jurnal yang tersimpan. Database tidak tahu siapa yang sedang login.
-- **Implementasi:**
+| # | Payload | Harapan | Hasil nyata |
+|---|---------|---------|-------------|
+| V1 | `{"kegiatan":"Kegiatan yang sudah diperbarui"}` | 200 | 200 |
+| V2 | `{"hambatan":"Tidak ada hambatan"}` | 200 | 200 |
+| V3 | `{"linkCommit":"https://github.com/user/repo/commit/abc123"}` | 200 | 200 |
+| I1 | `{"kegiatan":"12345"}` | 422 | 422 VALIDATION_ERROR, kegiatan: kegiatan must be longer than or equal to 10 characters |
+| I2 | `{"kegiatan":123}` | 422 | 422 VALIDATION_ERROR, kegiatan: kegiatan must be shorter than or equal to 2000 characters, kegiatan: kegiatan must be longer than or equal to 10 characters |
+| I3 | `{"linkCommit":"bukan-url"}` | 422 | 422 VALIDATION_ERROR, linkCommit: Link commit harus berupa URL yang valid |
+| I4 | `{"lampiran":"x"}` | 422 | 422 VALIDATION_ERROR, lampiran: Lampiran maksimal 5 item, lampiran: lampiran must be an array |
+| I5 | `{"statusReview":"sudah"}` | 422 | 422 VALIDATION_ERROR, statusReview: Properti ini tidak diizinkan |
 
-  ```ts
-  const jurnal = await this.jurnalRepo.findById(id);
-  if (!jurnal) return null;                          // 404
-  if (jurnal.pesertaId !== pesertaIdDariToken) {
-      throw new ForbiddenError("Bukan jurnal milikmu"); // 403
-  }
-  ```
+### 8. ReviewJurnalDto
 
-  `pesertaIdDariToken` berasal dari `req.user.id`, bukan dari body.
-- **Lapisan cadangan:** tidak ada. Jangan percaya `pesertaId` dari client.
+| # | Payload | Harapan | Hasil nyata |
+|---|---------|---------|-------------|
+| V1 | `{"statusReview":"belum"}` | 200 | 200 |
+| V2 | `{"statusReview":"sudah","catatan":"Sudah bagus, lanjutkan"}` | 200 | 200 |
+| V3 | `{"statusReview":"sudah","catatan":"12345"}` | 200 | 200 |
+| I1 | `{}` | 422 | 422 VALIDATION_ERROR, statusReview: statusReview harus belum atau sudah |
+| I2 | `{"statusReview":"selesai"}` | 422 | 422 VALIDATION_ERROR, statusReview: statusReview harus belum atau sudah |
+| I3 | `{"statusReview":"sudah"}` | 422 | 422 VALIDATION_ERROR, catatan: Catatan minimal 5 karakter, catatan: Catatan wajib diisi saat jurnal ditandai sudah direview |
+| I4 | `{"statusReview":"sudah","catatan":"abcd"}` | 422 | 422 VALIDATION_ERROR, catatan: Catatan minimal 5 karakter |
+| I5 | `{"statusReview":"belum","kegiatan":"diubah mentor"}` | 422 | 422 VALIDATION_ERROR, kegiatan: Properti ini tidak diizinkan |
 
-### e. Fase bernilai 1 sampai 5
+### 9. ListJurnalQueryDto
 
-- **Tempat:** DTO
-- **Alasan:** Rentang nilai bisa dicek dari input saja.
-- **Implementasi:**
-
-  ```ts
-  @Type(() => Number)
-  @IsInt({ message: "Fase harus berupa bilangan bulat" })
-  @Min(1, { message: "Fase minimal 1" })
-  @Max(5, { message: "Fase maksimal 5" })
-  fase!: number;
-  ```
-
-- **Lapisan cadangan:** opsional, `CHECK (fase BETWEEN 1 AND 5)` di database supaya data tetap bersih walau diubah lewat SQL manual. Lapisan utamanya tetap DTO karena memberi pesan error yang jelas ke client.
-
-### f. Password minimal 8 karakter
-
-- **Tempat:** DTO
-- **Alasan:** Panjang harus dicek pada password asli sebelum di-hash. Setelah di-hash, panjangnya selalu sama (misalnya 60 karakter untuk bcrypt), jadi service dan database tidak bisa lagi memeriksanya.
-- **Implementasi:**
-
-  ```ts
-  @IsString()
-  @MinLength(8, { message: "Password minimal 8 karakter" })
-  password!: string;
-  ```
-
-  Jangan pakai `@Trim()` pada password, karena spasi bisa jadi bagian dari password.
-- **Lapisan cadangan:** tidak ada. Kolom `password` di database hanya berisi hash.
-
-### g. `pesertaId` pada jurnal menunjuk peserta yang ada
-
-- **Tempat:** Database (foreign key)
-- **Alasan:** Ini integritas referensial: hanya database yang bisa menjamin baris induk benar-benar ada, bahkan saat peserta dihapus bersamaan dengan insert jurnal. Constraint `FK_Jurnal_Peserta` sudah ada di tabel.
-- **Implementasi:** relasi di entity:
-
-  ```ts
-  @ManyToOne(() => Peserta, (peserta) => peserta.jurnalList, { onDelete: "RESTRICT" })
-  @JoinColumn({ name: "pesertaId" })
-  peserta!: Peserta;
-  ```
-
-  Pelanggaran menghasilkan error `violates foreign key constraint`, yang diubah error handler menjadi 409.
-- **Lapisan cadangan:** pada endpoint buat jurnal, `pesertaId` diambil dari token (bukan dari body), jadi jarang terjadi. Kalau ada endpoint yang menerima `pesertaId` dari client, DTO cukup memeriksa bentuknya (`@IsInt @Min(1)`), sedangkan keberadaannya tetap dijaga foreign key.
-
-### h. Jurnal yang sudah direview tidak boleh diedit lagi
-
-- **Tempat:** Service
-- **Alasan:** Aturan ini bergantung pada status data yang sudah tersimpan (`statusReview`). DTO hanya melihat request dan tidak tahu kondisi jurnal saat ini. Database juga tidak cocok, karena butuh trigger untuk aturan bisnis seperti ini, dan itu sulit dirawat.
-- **Implementasi:**
-
-  ```ts
-  const jurnal = await this.jurnalRepo.findById(id);
-  if (!jurnal) return null;                                   // 404
-  if (jurnal.statusReview === "sudah") {
-      throw new ConflictError("Jurnal yang sudah direview tidak dapat diedit"); // 409
-  }
-  ```
-
-  Urutan pengecekan di service: ada atau tidak (404), milik siapa (aturan d, 403), baru kemudian status (aturan h).
-- **Lapisan cadangan:** tidak ada. Terapkan juga pada endpoint hapus jurnal kalau aturannya sama.
-
-## Rangkuman
-
-| Lapisan | Aturan | Sifat |
-|---------|--------|-------|
-| DTO | a, c, e, f | Cek bentuk dan nilai dari input saja |
-| Service | d, h | Aturan bisnis yang butuh user login atau kondisi data tersimpan |
-| Database | b, g | Integritas data antar baris yang harus dijamin walau ada request bersamaan |
+| # | Query | Harapan | Hasil nyata |
+|---|-------|---------|-------------|
+| V1 | `?sortBy=statusReview&statusReview=sudah` | 200 | 200 |
+| V2 | `?from=2026-09-01&to=2026-09-30` | 200 | 200 |
+| V3 | `?belumDireview=true&pesertaId=1` | 200 | 200 |
+| I1 | `?sortBy=kegiatan` | 422 | 422 VALIDATION_ERROR, sortBy: sortBy must be one of the following values: createdAt, statusReview |
+| I2 | `?statusReview=selesai` | 422 | 422 VALIDATION_ERROR, statusReview: statusReview harus belum atau sudah |
+| I3 | `?from=kemarin` | 422 | 422 VALIDATION_ERROR, from: from harus berformat tanggal ISO, contoh 2026-09-01 |
+| I4 | `?pesertaId=abc` | 422 | 422 VALIDATION_ERROR, pesertaId: pesertaId must not be less than 1, pesertaId: pesertaId must be an integer number |
+| I5 | `?belumDireview=mungkin` | 422 | 422 VALIDATION_ERROR, belumDireview: belumDireview harus true atau false |
