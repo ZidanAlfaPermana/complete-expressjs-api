@@ -1,0 +1,9 @@
+// tsconfig.test.json — konfigurasi khusus test (tsconfig utama tetap hanya untuk src)
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

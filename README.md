@@ -275,3 +275,108 @@ Entity itu cerminan tabel di database, jadi isinya lengkap: id, password hash, r
 
 Kalau Entity dipakai langsung sebagai body register, orang bisa menyelipkan field yang tidak seharusnya mereka isi, seperti role: "mentor" atau id sendiri, dan itu bisa lolos tanpa sengaja (namanya mass assignment). Selain itu, validasinya jadi campur aduk dan setiap perubahan di tabel ikut mengubah kontrak API.
 
+---
+
+## Test jest apakah berfungsi atau tidak (response.test.ts)
+
+### Sebelum kode dirusak:
+
+```ts
+export function dibuat<T>(res: Response, data: T, pesan: string = "Data berhasil dibuat"): void {
+   const dataBersih = tanpaPassword(data);
+   res.status(201).json({ sukses: true, pesan, dataBersih });
+}
+
+export function diubah<T>(res: Response, data: T, pesan: string = "Data berhasil diedit"): void {
+   const dataBersih = tanpaPassword(data);
+   res.status(200).json({ sukses: true, pesan, dataBersih });
+}
+```
+
+### Hasil Test:
+
+```bash
+ PASS  tests/unit/utils/response.test.ts (9.32 s)
+ 
+Test Suites: 4 passed, 4 total
+Tests:       36 passed, 36 total
+Snapshots:   0 total
+Time:        11.679 s
+Ran all test suites.
+```
+
+### Sesudah kode dirusak:
+
+```ts
+export function dibuat<T>(res: Response, data: T, pesan: string = "Data berhasil dibuat"): void {
+   const dataBersih = tanpaPassword(data);
+   res.status(/*201*/195).json({ sukses: true, pesan, dataBersih });
+}
+
+export function diubah<T>(res: Response, data: T, pesan: string = "Data berhasil diedit"): void {
+   const dataBersih = tanpaPassword(data);
+   res.status(/*200*/195).json({ sukses: true, pesan, dataBersih });
+}
+```
+
+### Hasil Test:
+
+```bash
+ FAIL  tests/unit/utils/response.test.ts (10.408 s)
+
+ RUNS  tests/unit/utils/response.test.ts
+  ● response.dibuat › mengirim status 201
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 201
+    Received: 195
+
+    Number of calls: 1
+
+      19 |         fn(res, { id: 1, nama: "Budi" });
+      20 |
+    > 21 |         expect(res.status).toHaveBeenCalledWith(statusHarapan);
+         |                            ^
+      22 |     });
+      23 |
+      24 |     it("mengirim body { sukses: true, pesan, data } dengan pesan default", () => {
+
+      at Object.<anonymous> (tests/unit/utils/response.test.ts:21:28)
+
+  ● response.diubah › mengirim status 200
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: 200
+    Received: 195
+
+    Number of calls: 1
+
+      19 |         fn(res, { id: 1, nama: "Budi" });
+      20 |
+    > 21 |         expect(res.status).toHaveBeenCalledWith(statusHarapan);
+         |                            ^
+      22 |     });
+      23 |
+      24 |     it("mengirim body { sukses: true, pesan, data } dengan pesan default", () => {
+
+      at Object.<anonymous> (tests/unit/utils/response.test.ts:21:28)
+
+
+RUNS  tests/unit/utils/response.test.ts
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       2 failed, 34 passed, 36 total
+Snapshots:   0 total
+Time:        11.859 s, estimated 14 s
+Ran all test suites.
+```
+
+## Test untuk async (Benar) dan tanpa async (Salah)
+
+| Kondisi getTotalJurnal                              | Test<br/>SALAH | Test<br/>BENAR |
+|-----------------------------------------------------|----------------|----------------|
+| Normal (error diteruskan)                           | lulus          | lulus          |
+| Dirusak (try/catch yang menelan error dan return 0) | tetap lulus    | gagal          |
+| Kembali seperti semula                              | lulus          | lulus          |
+

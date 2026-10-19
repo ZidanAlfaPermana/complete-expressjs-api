@@ -5,6 +5,7 @@ import {JurnalFilter} from "../repositories/jurnal.repository";
 import {ListQuery} from "../utils/pagination";
 import {ConflictError, NotFoundError} from "../utils/AppError";
 import {JurnalDto} from "../dto/jurnal.dto";
+import {Jurnal} from "../types";
 
 interface JurnalBody {
     pesertaId: number;
@@ -37,14 +38,20 @@ export class JurnalService {
         return this.jurnalRepo.findPaginated(lq, filter);
     }
 
-    async getTotalJurnal() {
+    async getTotalJurnal()  {
+        // untuk test jest.
+        /*try {
+            return await this.jurnalRepo.count();
+        } catch {
+            return 0;
+        }*/
         const total = await this.jurnalRepo.count();
-        return String(total);
+        return String(total)
     }
 
     async getTotalJurnalBelumReview() {
         const total = await this.jurnalRepo.countByReview("belum");
-        return String(total);
+        return String(total)
     }
 
     async updateReviewJurnal(id: number, statusReview: "sudah" | "belum", catatan?: string, emailReviewer?: string) {
