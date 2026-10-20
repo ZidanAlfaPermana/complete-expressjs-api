@@ -24,6 +24,11 @@ export class RegisterDto {
 
     @IsString({ message: "Password harus berupa teks" })
     @MinLength(8, { message: "Password minimal 8 karakter" })
+    /*
+    * soal 6, minggu 15, hari selasa
+    * hasil test jika saja comment/hilangkan maxlength password, terdapat satu test yang failed yaitu
+    * pada RegisterDto bagian RegisterDto › menolak: password lebih dari 72 karakter
+    * */
     @MaxLength(72, { message: "Password maksimal 72 karakter" })
     @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
         message: "Password harus mengandung huruf dan angka",
@@ -45,3 +50,10 @@ export class LoginDto {
     @IsNotEmpty({ message: "Password wajib diisi" })
     password!: string;
 }
+
+/*
+export class RefreshTokenDto {
+    @IsNotEmpty({ message: "Token Refresh harus diisi"})
+
+
+}*/

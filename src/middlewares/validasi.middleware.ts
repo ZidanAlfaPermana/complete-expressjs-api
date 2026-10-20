@@ -3,7 +3,7 @@ import { Request, RequestHandler } from "express";
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { ValidationError } from "../utils/AppError";
-import { ratakan } from "../utils/validasi.util";
+import {ratakan, validasiDto} from "../utils/validasi.util";
 
 type Sumber = "body" | "query" | "params";
 
@@ -13,35 +13,11 @@ export function validasi<T extends object>(
 ): RequestHandler {
     return async (req, _res, next) => {
         try {
-            // Express 5: req.body bisa undefined kalau tidak ada body
-            const mentah: unknown = req[sumber] ?? {};
-
-            // Tolak body yang bukan objek JSON (misal array atau teks)
-            if (typeof mentah !== "object" || mentah === null || Array.isArray(mentah)) {
-                throw new ValidationError([
-                    { field: sumber, pesan: `${sumber} harus berupa objek` },
-                ]);
-            }
-
-            const instance = plainToInstance(dto, mentah as Record<string, unknown>, {
-                exposeDefaultValues: true,
-            });
-
-            const errors = await validate(instance, {
-                whitelist: true,                                   // buang properti tanpa decorator
-                forbidNonWhitelisted: sumber === "body",           // body dengan properti asing ditolak
-                validationError: { target: false, value: false },  // JANGAN ikutkan nilai (mis. password)
-            });
-
-            if (errors.length > 0) {
-                throw new ValidationError(ratakan(errors));
-            }
-
-            // Simpan di req.validated, bukan menimpa req.query (read-only di Express 5)
+            const instance = await validasiDto(dto, req[sumber], sumber);
             req.validated = { ...req.validated, [sumber]: instance };
             next();
         } catch (err) {
-            next(err);   // diteruskan ke errorHandler Minggu 13
+            next(err);
         }
     };
 }

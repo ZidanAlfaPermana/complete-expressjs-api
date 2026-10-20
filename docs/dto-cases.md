@@ -131,3 +131,10 @@
 | I3 | `?from=kemarin` | 422 | 422 VALIDATION_ERROR, from: from harus berformat tanggal ISO, contoh 2026-09-01 |
 | I4 | `?pesertaId=abc` | 422 | 422 VALIDATION_ERROR, pesertaId: pesertaId must not be less than 1, pesertaId: pesertaId must be an integer number |
 | I5 | `?belumDireview=mungkin` | 422 | 422 VALIDATION_ERROR, belumDireview: belumDireview harus true atau false |
+
+## Tabel test payload pada setiap DTO
+
+| DTO | Valid | Tidak Valid | Status |
+|-----|-------|-------------|--------|
+|     |       |             | PASS   |
+|     |       |             | PASS   |
