@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import {JurnalService, PesertaService} from "../services";
+import {JurnalService, pesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
 import { RoleMiddleware } from "../middlewares"
@@ -9,6 +9,8 @@ import {ambilDto} from "../middlewares/validasi.middleware";
 import {JurnalDto, ListJurnalQueryDto, ReviewJurnalDto} from "../dto/jurnal.dto";
 import {serialisasi} from "../utils/serialisasi";
 import {JurnalResponseDto} from "../dto/response/jurnal.response";
+import {AppDataSource} from "../config/database.config";
+import {JurnalHarian, Mentor, Peserta} from "../entities";
 
 interface JurnalBody {
     pesertaId: number;
@@ -21,8 +23,7 @@ interface JurnalBody {
     reviewerId: number;
 }
 
-const jurnalService = new JurnalService();
-const pesertaService = new PesertaService();
+const jurnalService = new JurnalService(AppDataSource.getRepository(Peserta), AppDataSource.getRepository(JurnalHarian), AppDataSource.getRepository(Mentor));
 
 function parseTanggal(nilai: unknown, akhirHari = false): Date | undefined {
     if (typeof nilai !== "string" || !nilai) return undefined;
@@ -102,6 +103,7 @@ export const updateReviewJurnal = asyncHandler(async (req: Request, res: Respons
 
     const jurnalUpdated = await jurnalService.updateReviewJurnal(
         id,
+        { id: req.user!.id, role: req.user!.role },
         statusReview,
         catatan,
         req.user?.email
@@ -132,7 +134,7 @@ export const updateJurnal = asyncHandler(async (req: Request, res: Response) => 
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 
-    const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody);
+    const jurnalUpdated = await jurnalService.updateJurnal(id, req.body as JurnalBody, { id: req.user!.id, role: req.user!.role });
 
     if (!jurnalUpdated) {
         response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
@@ -151,7 +153,7 @@ export const updateJurnalBeberapa = asyncHandler(async (req: Request, res: Respo
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 
-    const jurnalUpdated = await jurnalService.updateBeberapaDataJurnal(id, req.body as JurnalBody);
+    const jurnalUpdated = await jurnalService.updateBeberapaDataJurnal(id, req.body as JurnalBody, { id: req.user!.id, role: req.user!.role });
 
     if (!jurnalUpdated) {
         response.gagal(res, `Jurnal dengan id ${id} tidak ditemukan`, [], 404)
@@ -169,7 +171,7 @@ export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     if (authUtils.isUserSame(userId, userIdFromJurnal)) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
-    const deleted = await jurnalService.hapusJurnal(id);
+    const deleted = await jurnalService.hapusJurnal(id, { id: req.user!.id, role: req.user!.role });
 
     if (!deleted) {
         throw new AppError.NotFoundError(`Jurnal dengan id ${id} tidak ditemukan`);

@@ -380,3 +380,48 @@ Ran all test suites.
 | Dirusak (try/catch yang menelan error dan return 0) | tetap lulus    | gagal          |
 | Kembali seperti semula                              | lulus          | lulus          |
 
+## Refleksi: menguji "apa yang terjadi" vs "bagaimana caranya"
+
+Menguji "apa yang terjadi" berarti memeriksa hasil yang bisa diamati dari luar: nilai kembalian, error yang dilempar, dan data yang akhirnya disimpan. Menguji "bagaimana caranya" berarti mengunci langkah internal seperti jumlah pemanggilan, urutan, atau method mana yang dipakai, sehingga test patah saat kode di-refactor padahal perilakunya masih benar. Test jenis pertama tahan terhadap refactor dan berfungsi sebagai dokumentasi perilaku, sedangkan jenis kedua membuat kita takut mengubah kode. Mock tetap berguna di batas sistem seperti database dan JWT, tetapi yang diperiksa sebaiknya isi data yang keluar ke batas itu, bukan jalur yang ditempuh service untuk sampai ke sana.
+
+### Contoh test yang terlalu terikat pada implementasi
+
+```ts
+it("register memanggil repo dengan benar", async () => {
+    pesertaRepo.findByEmail.mockResolvedValue(null);
+    mockHashPassword.mockResolvedValue("HASH");
+    pesertaRepo.save.mockResolvedValue({ id: 1 });
+
+    await service.register(inputRegister);
+
+    expect(pesertaRepo.findByEmail).toHaveBeenCalledTimes(1);
+    expect(mockHashPassword).toHaveBeenCalledTimes(1);
+    expect(pesertaRepo.save).toHaveBeenCalledTimes(1);
+    expect(pesertaRepo.save).toHaveBeenCalledWith({
+        nama: "Budi",
+        sekolah: "SMKN 1 Contoh",
+        email: "budi@mail.com",
+        password: "HASH",
+        fase: 1,
+        role: "peserta",
+        skills: [],
+    });
+});
+```
+
+Test ini patah jika pengecekan email diganti method lain, jika `skills: []` dihapus, atau jika `hashPassword` dipanggil dua kali, padahal hasil register bagi pengguna tidak berubah.
+
+### Ditulis ulang
+
+```ts
+it("register menyimpan hash dan tidak membocorkan password", async () => {
+    pesertaRepo.findByEmail.mockResolvedValue(null);
+    mockHashPassword.mockResolvedValue("HASH");
+    pesertaRepo.save.mockImplementation(async (data: object) => ({ id: 1, ...data }));
+
+    const hasil = await service.register(inputRegister);
+
+    expect(pesertaRepo.save.mock.calls[0][0].password).toBe("HASH");
+    expect(hasil).not.toHaveProperty("password");
+});
+```

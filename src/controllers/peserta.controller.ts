@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PesertaService } from "../services";
+import { pesertaService } from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response, authUtils, AppError } from "../utils";
 import {buatMeta} from "../utils/pagination";
@@ -19,8 +19,6 @@ interface PesertaBody {
     role: "peserta" | "mentor"
     fase: number;
 }
-
-const pesertaService = new PesertaService();
 
 // Controller: tidak ada lagi parseListQuery dan konversi manual
 export const getSemuaPeserta = asyncHandler(async (req, res) => {

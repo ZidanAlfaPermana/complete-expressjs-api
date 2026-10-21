@@ -1,12 +1,7 @@
-import { AppDataSource } from "../config/database.config";
-import {Peserta} from "../entities";
-import { RefreshTokenRepository } from "../repositories";
+import { PesertaRepository, RefreshTokenRepository } from "../repositories";
 import { hashPassword, cekPassword } from "../utils/password";
-import {buatAccessToken, buatRefreshToken, verifikasiRefreshToken} from "../utils/jwt";
+import { buatAccessToken, buatRefreshToken, verifikasiRefreshToken } from "../utils/jwt";
 import { ConflictError, UnauthorizedError } from "../utils/AppError";
-
-const repo = AppDataSource.getRepository(Peserta);
-const repoAuth = new RefreshTokenRepository();
 
 interface RegisterInput {
     nama: string;
@@ -21,77 +16,69 @@ interface LoginInput {
     password: string;
 }
 
-export async function login(data: LoginInput) {
-    const peserta = await repo
-  .createQueryBuilder("p")
-  .addSelect("p.password")
-  .where("p.email = :email", { email: data.email })
-  .getOne();
+const MASA_BERLAKU_REFRESH_TOKEN_MS = 7 * 24 * 60 * 60 * 1000;
 
-    if (!peserta) {
-        throw new UnauthorizedError("Email atau password salah");
+export class AuthService {
+    constructor(
+        private readonly pesertaRepo: PesertaRepository,
+        private readonly refreshTokenRepo: RefreshTokenRepository
+    ) {}
+
+    async login(data: LoginInput) {
+        const peserta = await this.pesertaRepo.cariDenganPassword(data.email);
+        if (!peserta) throw this.kredensialSalah();
+
+        const passwordCocok = await cekPassword(data.password, peserta.password);
+        if (!passwordCocok) throw this.kredensialSalah();
+
+        const payload = { id: peserta.id, email: peserta.email, role: peserta.role };
+        const accessToken = buatAccessToken(payload);
+        const refreshToken = buatRefreshToken(payload);
+
+        await this.refreshTokenRepo.save({
+            token: refreshToken,
+            peserta,
+            expiresAt: new Date(Date.now() + MASA_BERLAKU_REFRESH_TOKEN_MS),
+        });
+
+        const { password, ...pesertaAman } = peserta;
+        return { accessToken, refreshToken, peserta: pesertaAman };
     }
 
-    const passwordCocok = await cekPassword(data.password, peserta.password);
-    if (!passwordCocok) {
-        throw new UnauthorizedError("Email atau password salah");
+    async register(data: RegisterInput) {
+        const sudahAda = await this.pesertaRepo.findByEmail(data.email);
+        if (sudahAda) throw new ConflictError("Email sudah terdaftar");
+
+        const tersimpan = await this.pesertaRepo.save({
+            nama: data.nama,
+            sekolah: data.sekolah,
+            email: data.email,
+            password: await hashPassword(data.password),
+            fase: 1,
+            role: "peserta",
+            skills: [],
+        });
+
+        const { password, ...aman } = tersimpan;
+        return aman;
     }
 
-    const accessToken = buatAccessToken({ id: peserta.id, email: peserta.email, role: peserta.role });
-    const refreshToken = buatRefreshToken({ id: peserta.id, email: peserta.email, role: peserta.role });
+    async refresh(refreshTokenInput: string) {
+        const { id, email, role } = verifikasiRefreshToken(refreshTokenInput);
 
-    await repoAuth.save({
-        token: refreshToken,
-        peserta,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
+        const tersimpan = await this.refreshTokenRepo.findOneBy(refreshTokenInput);
+        if (!tersimpan) {
+            throw new UnauthorizedError("Refresh token tidak dikenali atau sudah dicabut");
+        }
 
-    const { password, ...pesertaAman } = peserta;
-    return { accessToken, refreshToken, peserta: pesertaAman };
-}
-
-export async function register(data: RegisterInput) {
-    const { konfirmasiPassword, ...dataPeserta } = data;
-    const sudahAda = await repo
-  .createQueryBuilder("p")
-  .addSelect("p.password")
-  .where("p.email = :email", { email: data.email })
-  .getOne();
-    if (sudahAda) {
-        throw new ConflictError("Email sudah terdaftar");
+        return { accessToken: buatAccessToken({ id, email, role }) };
     }
 
-    const passwordHash = await hashPassword(data.password);
-
-    const peserta = repo.create({
-        nama: data.nama,
-        sekolah: data.sekolah,
-        email: data.email,
-        password: passwordHash,
-        fase: 1,
-        role: "peserta",
-        skills: []
-    });
-
-    const tersimpan = await repo.save(peserta);
-    const { password, ...aman } = tersimpan;
-
-    return aman;
-}
-
-export async function refresh(refreshTokenInput: string) {
-    const payload = verifikasiRefreshToken(refreshTokenInput);   // lempar error jika invalid
-
-    const tersimpan = await repoAuth.findOneBy(refreshTokenInput);
-    if (!tersimpan) {
-        throw new UnauthorizedError("Refresh token tidak dikenali atau sudah dicabut");
+    async logout(refreshTokenInput: string) {
+        await this.refreshTokenRepo.delete(refreshTokenInput);
     }
 
-    const { id, email, role } = payload;
-    const accessTokenBaru = buatAccessToken({ id, email, role });
-    return { accessToken: accessTokenBaru };
-}
-
-export async function logout(refreshTokenInput: string) {
-    await repoAuth.delete(refreshTokenInput);
+    private kredensialSalah() {
+        return new UnauthorizedError("Email atau password salah");
+    }
 }

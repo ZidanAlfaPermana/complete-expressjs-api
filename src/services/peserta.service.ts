@@ -1,22 +1,23 @@
-import { PesertaRepository } from "../repositories";
-import {Skill, Peserta} from "../entities";
-import {hashPassword} from "../utils/password";
-import {ListQuery} from "../utils/pagination";
-import {PesertaFilter} from "../repositories/peserta.repository";
-import {ConflictError, NotFoundError} from "../utils/AppError";
-import {UpdateProfilDto} from "../dto/peserta.dto";
-import {ValidationError} from "../utils/AppError";
+import { DeepPartial, FindOptionsOrder, FindOptionsWhere, Repository } from "typeorm";
+import { Skill, Peserta } from "../entities";
+import { PesertaFilter } from "../repositories/peserta.repository";
+import { hashPassword } from "../utils/password";
+import { ListQuery } from "../utils/pagination";
+import { ConflictError, NotFoundError, ValidationError } from "../utils/AppError";
+import { UpdateProfilDto } from "../dto/peserta.dto";
 
-interface PesertaBody {
+export interface PesertaBody {
     nama: string;
     email: string;
     password: string;
     status: "aktif" | "berhenti" | "lulus";
     sekolah: string;
     fase: number;
-    role: 'peserta' | 'mentor';
+    role: "peserta" | "mentor";
     skillIds?: number[];
 }
+
+export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
 
 export function hanyaYangDiisi<T extends object>(data: T): Partial<T> {
     return Object.fromEntries(
@@ -24,115 +25,132 @@ export function hanyaYangDiisi<T extends object>(data: T): Partial<T> {
     ) as Partial<T>;
 }
 
-export const SORT_PESERTA = ["nama", "fase", "createdAt"] as const;
-
 export class PesertaService {
-    private pesertaRepo = new PesertaRepository();
+    constructor(private readonly repo: Repository<Peserta>) {}
 
     async getSemuaPeserta(lq: ListQuery, filter: PesertaFilter) {
-        return this.pesertaRepo.findPaginated(lq, filter);
+        const where: FindOptionsWhere<Peserta> = hanyaYangDiisi({
+            status: filter.status,
+            fase: filter.fase,
+            sekolah: filter.sekolah,
+            role: filter.role,
+        }) as FindOptionsWhere<Peserta>;
+
+        const sortBy = SORT_PESERTA.find(k => k === lq.sortBy) ?? "createdAt";
+        const order = { [sortBy]: lq.order ?? "ASC" } as FindOptionsOrder<Peserta>;
+
+        const [data, total] = await this.repo.findAndCount({
+            where,
+            order,
+            skip: (lq.page - 1) * lq.limit,
+            take: lq.limit,
+        });
+
+        return { data, total, page: lq.page, limit: lq.limit };
     }
 
     async getTotalPeserta() {
-        const total = await this.pesertaRepo.count();
-        return String(total);
+        return String(await this.repo.count());
     }
 
     async getPesertaById(id: number) {
-        return this.pesertaRepo.findById(id);
+        const peserta = await this.cariById(id);
+        if (!peserta) throw new NotFoundError("Peserta");
+        return peserta;
     }
 
-    async getPesertaDenganJurnal(id: number) {
-        return this.pesertaRepo.getPesertaDenganJurnal(id)
-    }
-
-    async buatPeserta(data: PesertaBody) {
-        const isNamaDuplikat = await this.pesertaRepo.findByNamaAndSekolah(data.nama, data.sekolah);
-        const isEmailDuplikat = await this.pesertaRepo.findByEmail(data.email);
-
-        if (isNamaDuplikat) {
-            throw new ConflictError(`Peserta bernama ${data.nama} dari sekolah ${data.sekolah} sudah terdaftar!`);
-        }
-
-        if (isEmailDuplikat) {
-            throw new ConflictError(`Email sudah terdaftar, coba email yang lain`);
-        }
-
-        const skills = data.skillIds ? data.skillIds.map(id => ({ id } as Skill)) : [];
-
-        const hashed = await hashPassword(data.password);
-
-        return this.pesertaRepo.save({
-            nama: data.nama,
-            email: data.email,
-            password: hashed,
-            sekolah: data.sekolah,
-            fase: data.fase,
-            role: data.role,
-            skills: skills
+    getPesertaDenganJurnal(id: number) {
+        return this.repo.findOne({
+            where: { id },
+            relations: { jurnalList: true },
         });
     }
 
-    async updatePeserta(id: number, data: Partial<PesertaBody>) {
-        const peserta = await this.pesertaRepo.findById(id);
-        if (!peserta) return null;
+    async buatPeserta(data: PesertaBody) {
+        const [duplikatNama, duplikatEmail] = await Promise.all([
+            this.repo.findOneBy({ nama: data.nama, sekolah: data.sekolah }),
+            this.repo.findOneBy({ email: data.email }),
+        ]);
 
-        const { nama, email, password, status, sekolah, fase, role, skillIds } = data;
+        if (duplikatNama) throw this.errorNamaDuplikat(data.nama, data.sekolah);
+        if (duplikatEmail) throw new ConflictError("Email sudah terdaftar, coba email yang lain");
 
-        const namaFinal = nama ?? peserta.nama;
-        const sekolahFinal = sekolah ?? peserta.sekolah;
-        const duplikat = await this.pesertaRepo.findByNamaAndSekolah(namaFinal, sekolahFinal);
-        if (duplikat && duplikat.id !== id) {
-            throw new ConflictError(`Peserta bernama ${namaFinal} dari sekolah ${sekolahFinal} sudah terdaftar!`);
-        }
-
-        const perubahan: Partial<Peserta> = Object.fromEntries(
-            Object.entries({ nama, email, status, sekolah, fase, role }).filter(([, v]) => v !== undefined)
-        );
-
-        if (password) perubahan.password = await hashPassword(password);
-        if (skillIds) perubahan.skills = skillIds.map(skillId => ({ id: skillId } as Skill));
-
-        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
+        return this.repo.save({
+            nama: data.nama,
+            email: data.email,
+            password: await hashPassword(data.password),
+            sekolah: data.sekolah,
+            fase: data.fase,
+            role: data.role,
+            skills: this.toSkills(data.skillIds) ?? [],
+        });
     }
 
-    async updatePesertaBeberapa(id: number, data: Partial<PesertaBody>) {
-        const peserta = await this.pesertaRepo.findById(id);
-        if (!peserta) return null;
+    updatePeserta(id: number, data: Partial<PesertaBody>) {
+        return this.terapkanUpdate(id, data);
+    }
 
-        const { nama, email, password, status, sekolah, fase, skillIds } = data;
-
-        const namaFinal = nama ?? peserta.nama;
-        const sekolahFinal = sekolah ?? peserta.sekolah;
-        const duplikat = await this.pesertaRepo.findByNamaAndSekolah(namaFinal, sekolahFinal);
-        if (duplikat && duplikat.id !== id) {
-            throw new ConflictError(`Peserta bernama ${namaFinal} dari sekolah ${sekolahFinal} sudah terdaftar!`);
-        }
-
-        const perubahan: Partial<Peserta> = Object.fromEntries(
-            Object.entries({ nama, email, status, sekolah, fase }).filter(([, v]) => v !== undefined)
-        );
-
-        if (password) perubahan.password = await hashPassword(password);
-        if (skillIds) perubahan.skills = skillIds.map(skillId => ({ id: skillId } as Skill));
-
-        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
+    updatePesertaBeberapa(id: number, data: Partial<PesertaBody>) {
+        const { role: _role, ...tanpaRole } = data;
+        return this.terapkanUpdate(id, tanpaRole);
     }
 
     async hapusPeserta(id: number) {
-        const result = await this.pesertaRepo.delete(id);
-        return (result.affected ?? 0) > 0;
+        const result = await this.repo.delete(id);
+        if (!result.affected) throw new NotFoundError("Peserta");
     }
 
     async ubahProfil(id: number, data: UpdateProfilDto) {
-        const peserta = await this.pesertaRepo.findById(id);
-        if (!peserta) throw new NotFoundError("Peserta");
+        await this.getPesertaById(id);
 
         const perubahan = hanyaYangDiisi(data);
         if (Object.keys(perubahan).length === 0) {
             throw new ValidationError([{ field: "body", pesan: "Minimal satu field harus diisi" }]);
         }
 
-        return this.pesertaRepo.ubahOlehMentor(id, perubahan);
+        return this.simpanPerubahan(id, perubahan);
+    }
+
+    private cariById(id: number) {
+        return this.repo.findOne({ where: { id }, relations: { skills: true } });
+    }
+
+    private async terapkanUpdate(id: number, data: Partial<PesertaBody>) {
+        const peserta = await this.cariById(id);
+        if (!peserta) return null;
+
+        const { password, skillIds, ...field } = data;
+
+        await this.pastikanTidakDuplikat(
+            field.nama ?? peserta.nama,
+            field.sekolah ?? peserta.sekolah,
+            id
+        );
+
+        const perubahan: DeepPartial<Peserta> = hanyaYangDiisi(field);
+        if (password) perubahan.password = await hashPassword(password);
+        if (skillIds) perubahan.skills = this.toSkills(skillIds);
+
+        return this.simpanPerubahan(id, perubahan);
+    }
+
+    private async simpanPerubahan(id: number, perubahan: DeepPartial<Peserta>) {
+        await this.repo.save({ ...perubahan, id });
+        return this.cariById(id);
+    }
+
+    private async pastikanTidakDuplikat(nama: string, sekolah: string, kecualiId: number) {
+        const duplikat = await this.repo.findOneBy({ nama, sekolah });
+        if (duplikat && duplikat.id !== kecualiId) {
+            throw this.errorNamaDuplikat(nama, sekolah);
+        }
+    }
+
+    private errorNamaDuplikat(nama: string, sekolah: string) {
+        return new ConflictError(`Peserta bernama ${nama} dari sekolah ${sekolah} sudah terdaftar!`);
+    }
+
+    private toSkills(ids?: number[]) {
+        return ids?.map(id => ({ id } as Skill));
     }
 }

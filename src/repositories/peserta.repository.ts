@@ -4,8 +4,10 @@ import {FindOptionsOrder, FindOptionsWhere, ILike} from "typeorm";
 import {escapeLike, ListQuery} from "../utils/pagination";
 
 export interface PesertaFilter {
+    status?: string;
     sekolah?: string;
     fase?: number;
+    role?: string
 }
 
 export class PesertaRepository {
@@ -87,5 +89,13 @@ export class PesertaRepository {
         });
 
         return { data, total };
+    }
+
+    async cariDenganPassword(email: string) {
+        return this.repo
+            .createQueryBuilder("p")
+            .addSelect("p.password")
+            .where("p.email = :email", { email })
+            .getOne();
     }
 }

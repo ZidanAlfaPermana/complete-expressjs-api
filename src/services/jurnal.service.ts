@@ -1,123 +1,146 @@
-import {JurnalRepository, MentorRepository} from "../repositories";
-import { AppDataSource } from "../config/database.config";
-import {Mentor, Peserta} from "../entities";
-import {JurnalFilter} from "../repositories/jurnal.repository";
-import {ListQuery} from "../utils/pagination";
-import {ConflictError, NotFoundError} from "../utils/AppError";
-import {JurnalDto} from "../dto/jurnal.dto";
-import {Jurnal} from "../types";
-
-interface JurnalBody {
-    pesertaId: number;
-    status: "belum" | "selesai" | "proses";
-    kegiatan: string;
-    hambatan?: string;
-    rencanaBesok: string;
-    linkCommit?: string;
-    review: "sudah" | "belum";
-    reviewerId: number;
-}
+import { FindOptionsOrder, FindOptionsWhere, Repository } from "typeorm";
+import { JurnalHarian, Mentor, Peserta } from "../entities";
+import { JurnalFilter } from "../repositories/jurnal.repository";
+import { ListQuery } from "../utils/pagination";
+import { ConflictError, ForbiddenError, NotFoundError } from "../utils/AppError";
+import { JurnalDto } from "../dto/jurnal.dto";
 
 export const SORT_JURNAL = ["createdAt", "statusReview"] as const;
 
-export class JurnalService {
-    private jurnalRepo = new JurnalRepository();
-    private pesertaRepo = AppDataSource.getRepository(Peserta);
-    private mentorRepo = new MentorRepository();
+export interface Pengguna {
+    id: number;
+    role: "peserta" | "mentor";
+}
 
-    private async ambilJurnalYangBolehDiubah(id: number) {
-        const jurnal = await this.jurnalRepo.findById(id);
-        if (!jurnal) return null;
-        if (jurnal.statusReview === "sudah") {
-            throw new ConflictError("Jurnal yang sudah direview tidak dapat diedit");
-        }
-        return jurnal;
-    }
+export class JurnalService {
+    constructor(
+        private readonly pesertaRepo: Repository<Peserta>,
+        private readonly jurnalRepo: Repository<JurnalHarian>,
+        private readonly mentorRepo: Repository<Mentor>
+    ) {}
 
     async getSemuaJurnal(lq: ListQuery, filter: JurnalFilter) {
-        return this.jurnalRepo.findPaginated(lq, filter);
+        const where = filter as FindOptionsWhere<JurnalHarian>;
+
+        const sortBy = SORT_JURNAL.find(k => k === lq.sortBy) ?? "createdAt";
+        const order = { [sortBy]: lq.order ?? "DESC" } as FindOptionsOrder<JurnalHarian>;
+
+        const [data, total] = await this.jurnalRepo.findAndCount({
+            where,
+            order,
+            skip: (lq.page - 1) * lq.limit,
+            take: lq.limit,
+        });
+
+        return { data, total, page: lq.page, limit: lq.limit };
     }
 
-    async getTotalJurnal()  {
-        // untuk test jest.
-        /*try {
-            return await this.jurnalRepo.count();
-        } catch {
-            return 0;
-        }*/
-        const total = await this.jurnalRepo.count();
-        return String(total)
+    async getTotalJurnal() {
+        return String(await this.jurnalRepo.count());
     }
 
     async getTotalJurnalBelumReview() {
-        const total = await this.jurnalRepo.countByReview("belum");
-        return String(total)
-    }
-
-    async updateReviewJurnal(id: number, statusReview: "sudah" | "belum", catatan?: string, emailReviewer?: string) {
-        const jurnal = await this.jurnalRepo.findById(id);
-        if (!jurnal) return null;
-
-        let reviewerId: number | null = null;
-        if (statusReview === "sudah" && emailReviewer) {
-            const mentor = await this.mentorRepo.findByEmail(emailReviewer);
-            reviewerId = mentor?.id ?? null;
-        }
-
-        jurnal.statusReview = statusReview;
-        jurnal.catatanMentor = statusReview === "sudah" ? catatan! : null;
-        jurnal.reviewerId = reviewerId;
-        return this.jurnalRepo.save(jurnal);
+        return String(await this.jurnalRepo.countBy({ statusReview: "belum" }));
     }
 
     async getRataRataJurnalPeserta() {
-        const totalJurnal = await this.jurnalRepo.count();
-        const totalPeserta = await this.pesertaRepo.count();
+        const [totalJurnal, totalPeserta] = await Promise.all([
+            this.jurnalRepo.count(),
+            this.pesertaRepo.count(),
+        ]);
 
         if (totalPeserta === 0) return "0";
-
-        const rataRata = totalJurnal / totalPeserta;
-        return rataRata.toFixed(2);
+        return (totalJurnal / totalPeserta).toFixed(2);
     }
 
-    async getJurnalById(id: number) {
-        return this.jurnalRepo.findById(id);
+    getJurnalById(id: number) {
+        return this.jurnalRepo.findOneBy({ id });
     }
 
-    async getJurnalByPesertaId(idPeserta: number) {
-        return this.jurnalRepo.findByPesertaId(idPeserta);
+    getJurnalByPesertaId(pesertaId: number) {
+        return this.jurnalRepo.find({ where: { pesertaId } });
     }
 
-    async getJurnalDenganPeserta() {
-        return this.jurnalRepo.getJurnalDenganPeserta();
+    getJurnalDenganPeserta() {
+        return this.jurnalRepo.find({ relations: { peserta: true } });
     }
 
-    async buatJurnal(pesertaId: number, dto: JurnalDto) {
-        return this.jurnalRepo.save(
-            await this.jurnalRepo.save({...dto, pesertaId})
-        );
+    async getUserIdFromJurnal(idJurnal: number) {
+        const jurnal = await this.jurnalRepo.findOne({
+            where: { id: idJurnal },
+            select: { id: true, pesertaId: true },
+        });
+        return jurnal?.pesertaId ?? null;
     }
 
-    async updateJurnal(id: number, dto: JurnalDto) {
-        const jurnal = await this.ambilJurnalYangBolehDiubah(id);
-        if (!jurnal) return null;
+    buatJurnal(pesertaId: number, dto: JurnalDto) {
+        return this.jurnalRepo.save({ ...dto, pesertaId });
+    }
+
+    async updateJurnal(id: number, dto: JurnalDto, pengguna: Pengguna) {
+        const jurnal = await this.ambilJurnalYangBolehDiubah(id, pengguna);
         Object.assign(jurnal, { hambatan: null, linkCommit: null, lampiran: null, ...dto });
         return this.jurnalRepo.save(jurnal);
     }
 
-    async updateBeberapaDataJurnal(id: number, dto: JurnalDto) {
-        const jurnal = await this.ambilJurnalYangBolehDiubah(id);
-        if (!jurnal) return null;
+    async updateBeberapaDataJurnal(id: number, dto: JurnalDto, pengguna: Pengguna) {
+        const jurnal = await this.ambilJurnalYangBolehDiubah(id, pengguna);
         Object.assign(jurnal, dto);
         return this.jurnalRepo.save(jurnal);
     }
 
-    async hapusJurnal(id: number) {
+    async updateReviewJurnal(
+        id: number,
+        pengguna: Pengguna,
+        statusReview: "sudah" | "belum",
+        catatan?: string,
+        emailReviewer?: string
+    ) {
+        if (pengguna.role !== "mentor") {
+            throw new ForbiddenError("Hanya mentor yang boleh me-review jurnal");
+        }
+
+        const jurnal = await this.cariJurnalAtauGagal(id);
+
+        let reviewerId: number | null = null;
+        if (statusReview === "sudah" && emailReviewer) {
+            const mentor = await this.mentorRepo.findOneBy({ email: emailReviewer });
+            reviewerId = mentor?.id ?? null;
+        }
+
+        jurnal.statusReview = statusReview;
+        jurnal.catatanMentor = statusReview === "sudah" ? (catatan ?? null) : null;
+        jurnal.reviewerId = reviewerId;
+        return this.jurnalRepo.save(jurnal);
+    }
+
+    async hapusJurnal(id: number, pengguna: Pengguna) {
+        const jurnal = await this.cariJurnalAtauGagal(id);
+        this.pastikanPemilik(jurnal, pengguna);
+
         const result = await this.jurnalRepo.delete(id);
         return (result.affected ?? 0) > 0;
     }
 
-    async getUserIdFromJurnal(idJurnal: number) {
-        return this.jurnalRepo.getUserIdFromJurnalId(idJurnal);
+    private async cariJurnalAtauGagal(id: number) {
+        const jurnal = await this.jurnalRepo.findOneBy({ id });
+        if (!jurnal) throw new NotFoundError("Jurnal");
+        return jurnal;
+    }
+
+    private pastikanPemilik(jurnal: JurnalHarian, pengguna: Pengguna) {
+        if (jurnal.pesertaId !== pengguna.id) {
+            throw new ForbiddenError("Anda tidak boleh mengubah jurnal milik peserta lain");
+        }
+    }
+
+    private async ambilJurnalYangBolehDiubah(id: number, pengguna: Pengguna) {
+        const jurnal = await this.cariJurnalAtauGagal(id);
+        this.pastikanPemilik(jurnal, pengguna);
+
+        if (jurnal.statusReview === "sudah") {
+            throw new ConflictError("Jurnal yang sudah direview tidak dapat diedit");
+        }
+        return jurnal;
     }
 }
