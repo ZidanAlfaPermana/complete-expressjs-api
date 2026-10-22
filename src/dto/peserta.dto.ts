@@ -14,6 +14,8 @@ import {
 import {ListQueryDto} from "./common.dto";
 import {Trim} from "./decorators/transform";
 import {Type} from "class-transformer";
+import {Peserta} from "../entities";
+
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MINIMAL_3_KARAKTER = /^\s*\S[\s\S]+\S\s*$/;

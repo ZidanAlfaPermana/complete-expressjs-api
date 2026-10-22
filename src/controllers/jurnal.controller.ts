@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import {JurnalService, pesertaService} from "../services";
+import {jurnalService, JurnalService, pesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
 import { RoleMiddleware } from "../middlewares"
@@ -23,7 +23,6 @@ interface JurnalBody {
     reviewerId: number;
 }
 
-const jurnalService = new JurnalService(AppDataSource.getRepository(Peserta), AppDataSource.getRepository(JurnalHarian), AppDataSource.getRepository(Mentor));
 
 function parseTanggal(nilai: unknown, akhirHari = false): Date | undefined {
     if (typeof nilai !== "string" || !nilai) return undefined;

@@ -19,11 +19,7 @@ export function authGuard(req: Request, res: Response, next: NextFunction): void
 
     const token = authHeader.split(" ")[1];
 
-    try {
-        const payload = verifikasiToken(token);
-        req.user = payload;   // sekarang tertyped, bisa dipakai di handler
-        next();
-    } catch (err) {
-        throw new UnauthorizedError("Token tidak valid atau sudah kedaluwarsa");
-    }
+    const payload = verifikasiToken(token);   // melempar error jika tidak valid
+    req.user = payload;
+    next();
 }

@@ -2,28 +2,28 @@
 
 ## Router Jurnal
 
-| Method | Path | Perlu login? | Role | Masalah desain (jika ada) |
-|--------|------|--------------|------|---------------------------|
-| GET | `/jurnal/saya` | Ya | mentor, peserta | "saya" tetap kata ganti; samakan dengan `/peserta/saya` (atau ganti keduanya jadi `/me`) |
-| GET | `/jurnal` | Ya | mentor | - |
-| GET | `/jurnal/peserta` | Ya | mentor | Ambigu dengan `/peserta/:id/jurnal`; lebih bersih jadi `GET /jurnal?include=peserta` |
-| GET | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan; peserta lain masih bisa membaca jurnal orang lain |
-| POST | `/jurnal` | Ya | mentor, peserta | - |
-| PUT | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan/role; wajib dicek di controller atau middleware |
-| PATCH | `/jurnal/:id/review` | Ya | mentor | - (duplikat middleware sudah dihapus) |
-| DELETE | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan/role; wajib dicek di controller atau middleware |
+| Method | Path | Perlu login? | Role | Masalah desain (jika ada) | Test |
+| -------- | ------ | -------------- | ------ | --------------------------- | --- |
+| GET | `/jurnal/me` | Ya | mentor, peserta | "saya" tetap kata ganti; samakan dengan `/peserta/me` (atau ganti keduanya jadi `/me`) | 🔴 Belum ada test |
+| GET | `/jurnal` | Ya | mentor | - | `tests/http/kontrak-api.test.ts` |
+| GET | `/jurnal/peserta` | Ya | mentor | Ambigu dengan `/peserta/:id/jurnal`; lebih bersih jadi `GET /jurnal?include=peserta` | 🔴 Belum ada test |
+| GET | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan; peserta lain masih bisa membaca jurnal orang lain | 🔴 Belum ada test |
+| POST | `/jurnal` | Ya | mentor, peserta | - | `tests/http/kontrak-api.test.ts` |
+| PUT | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan/role; wajib dicek di controller atau middleware | 🔴 Belum ada test |
+| PATCH | `/jurnal/:id/review` | Ya | mentor | - (duplikat middleware sudah dihapus) | 🔴 Belum ada test |
+| DELETE | `/jurnal/:id` | Ya | semua role | Belum ada cek kepemilikan/role; wajib dicek di controller atau middleware | 🔴 Belum ada test |
 
 ## Router Peserta
 
-| Method | Path | Perlu login? | Role | Masalah desain (jika ada) |
-|--------|------|--------------|------|---------------------------|
-| GET | `/peserta/saya` | Ya | semua role | Samakan pola dengan `/jurnal/saya` |
-| GET | `/peserta` | Ya | mentor | - |
-| GET | `/peserta/:id` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode |
-| GET | `/peserta/:id/jurnal` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode |
-| POST | `/peserta` | Ya | mentor | - |
-| PUT | `/peserta/:id` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode |
-| DELETE | `/peserta/:id` | Ya | mentor | - |
+| Method | Path | Perlu login? | Role | Masalah desain (jika ada) | Test |
+| -------- | ------ | -------------- | ------ | --------------------------- | --- |
+| GET | `/peserta/me` | Ya | semua role | Samakan pola dengan `/jurnal/me` | `tests/http/kontrak-api.test.ts` |
+| GET | `/peserta` | Ya | mentor | - | 🔴 Belum ada test |
+| GET | `/peserta/:id` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode | `tests/http/kontrak-api.test.ts` |
+| GET | `/peserta/:id/jurnal` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode | 🔴 Belum ada test |
+| POST | `/peserta` | Ya | mentor | - | 🔴 Belum ada test |
+| PUT | `/peserta/:id` | Ya | pemilik atau mentor | Bergantung pada `requireOwnerOrMentor` yang belum ada di kode | 🔴 Belum ada test |
+| DELETE | `/peserta/:id` | Ya | mentor | - | 🔴 Belum ada test |
 
 ## Penjelasan tiap skenario
 
@@ -1266,15 +1266,15 @@
 
 # Endpoint Audit
 
-| No | Method | Path | Login? | Role | Body DTO | Query DTO | Params DTO | Response DTO | Status | Catatan |
-|----|--------|------|--------|------|----------|-----------|------------|--------------|--------|---------|
-| 1 | POST | /auth/register | Tidak | - | RegisterDto | - | - | PesertaResponseDto | ✅ | |
-| 2 | POST | /auth/login | Tidak | - | LoginDto | - | - | TokenResponseDto | ✅ | |
-| 3 | GET | /peserta | Ya | mentor | - | ListPesertaQueryDto | - | PesertaResponseDto[] | ✅ | |
-| 4 | GET | /peserta/:id | Ya | mentor | - | - | IdParamDto | PesertaResponseDto | ✅ | |
-| 5 | GET | /peserta/me | Ya | peserta | - | - | - | PesertaResponseDto | ✅ | |
-| 6 | PATCH | /peserta/me | Ya | peserta | UpdateProfilDto | - | - | PesertaResponseDto | ✅ | |
-| 7 | GET | /jurnal | Ya | mentor | - | ListJurnalQueryDto | - | JurnalResponseDto[] | ✅ | |
-| 8 | POST | /jurnal | Ya | peserta | CreateJurnalDto | - | - | JurnalResponseDto | ✅ | |
-| 9 | PATCH | /jurnal/:id | Ya | peserta | UpdateJurnalDto | - | IdParamDto | JurnalResponseDto | ✅ | |
-| 10 | DELETE | /jurnal/:id | Ya | peserta | - | - | IdParamDto | - (204) | ✅ | |
+| No | Method | Path | Login? | Role | Body DTO | Query DTO | Params DTO | Response DTO | Status | Catatan | Test |
+| ---- | -------- | ------ | -------- | ------ | ---------- | ----------- | ------------ | -------------- | -------- | --------- | --- |
+| 1 | POST | /register | Tidak | - | RegisterDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 2 | POST | /login | Tidak | - | LoginDto | - | - | TokenResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 3 | GET | /peserta | Ya | mentor | - | ListPesertaQueryDto | - | PesertaResponseDto[] | ✅ |  | 🔴 Belum ada test |
+| 4 | GET | /peserta/:id | Ya | mentor | - | - | IdParamDto | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 5 | GET | /peserta/me | Ya | peserta | - | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 6 | PATCH | /peserta/me | Ya | peserta | UpdateProfilDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 7 | GET | /jurnal | Ya | mentor | - | ListJurnalQueryDto | - | JurnalResponseDto[] | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 8 | POST | /jurnal | Ya | peserta | CreateJurnalDto | - | - | JurnalResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 9 | PATCH | /jurnal/:id | Ya | peserta | UpdateJurnalDto | - | IdParamDto | JurnalResponseDto | ✅ |  | 🔴 Belum ada test |
+| 10 | DELETE | /jurnal/:id | Ya | peserta | - | - | IdParamDto | - (204) | ✅ |  | 🔴 Belum ada test |

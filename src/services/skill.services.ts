@@ -1,47 +1,44 @@
-import { SkillRepository } from "../repositories";
-import {ConflictError} from "../utils/AppError";
+import { Repository } from "typeorm";
+import { Skill } from "../entities";
+import {ConflictError, NotFoundError} from "../utils/AppError";
 
-interface SkillBody {
+export interface SkillBody {
     nama: string;
 }
 
 export class SkillService {
-    private skillRepo = new SkillRepository();
+    constructor(private readonly skillRepo: Repository<Skill>) {}
 
-    async getSemuaSkill() {
-        return this.skillRepo.findAll();
+    getSemuaSkill() {
+        return this.skillRepo.find();
     }
 
     async getSkillById(id: number) {
-        return this.skillRepo.findById(id);
+        const skill = await this.skillRepo.findOneBy({ id });
+        if (!skill) throw new NotFoundError("Skill");
+        return skill;
     }
 
     async buatSkill(data: SkillBody) {
-        const isDuplikat = await this.skillRepo.findByNama(data.nama);
-        if (isDuplikat) {
-            throw new ConflictError(`Skill dengan nama ${data.nama} sudah ada`);
-        }
-
+        await this.pastikanNamaBelumDipakai(data.nama);
         return this.skillRepo.save(data);
     }
 
     async updateSkill(id: number, data: SkillBody) {
-        const skill = await this.skillRepo.findById(id);
-        if (!skill) return null;
-
-        const isDuplikat = await this.skillRepo.findByNama(data.nama);
-        if (isDuplikat && isDuplikat.id !== id) {
-            throw new ConflictError(`Skill dengan nama ${data.nama} sudah ada`);
-        }
-
-        return this.skillRepo.save({
-            ...skill,
-            ...data
-        });
+        const skill = await this.getSkillById(id);
+        await this.pastikanNamaBelumDipakai(data.nama, id);
+        return this.skillRepo.save({ ...skill, ...data });
     }
 
     async hapusSkill(id: number) {
         const result = await this.skillRepo.delete(id);
-        return (result.affected ?? 0) > 0;
+        if (!result.affected) throw new NotFoundError(`Skill dengan id ${id} tidak ditemukan`);
+    }
+
+    private async pastikanNamaBelumDipakai(nama: string, kecualiId?: number) {
+        const duplikat = await this.skillRepo.findOneBy({ nama });
+        if (duplikat && duplikat.id !== kecualiId) {
+            throw new ConflictError(`Skill dengan nama ${nama} sudah ada`);
+        }
     }
 }

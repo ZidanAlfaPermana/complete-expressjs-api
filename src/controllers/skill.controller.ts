@@ -1,12 +1,10 @@
 import { Request, Response } from "express";
-import { SkillService } from "../services";
+import {skillService, SkillService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import { response } from "../utils";
 import {AppError} from "../utils";
 import {ambilDto} from "../middlewares/validasi.middleware";
 import {IdParamDto} from "../dto/common.dto";
-
-const skillService = new SkillService();
 
 export const getSemuaSkill = asyncHandler(async (req: Request, res: Response) => {
     const data = await skillService.getSemuaSkill();
@@ -43,10 +41,6 @@ export const updateSkill = asyncHandler(async (req: Request, res: Response) => {
 export const hapusSkill = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
     const deleted = await skillService.hapusSkill(id);
-
-    if (!deleted) {
-        throw new AppError.NotFoundError(`Skill dengan id ${id} tidak ditemukan`);
-    }
 
     response.sukses(res, [], "Data berhasil dihapus", 204);
 });

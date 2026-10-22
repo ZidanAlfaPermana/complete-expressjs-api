@@ -20,7 +20,6 @@ interface PesertaBody {
     fase: number;
 }
 
-// Controller: tidak ada lagi parseListQuery dan konversi manual
 export const getSemuaPeserta = asyncHandler(async (req, res) => {
     const query = ambilDto<ListPesertaQueryDto>(req, "query");
 
@@ -95,11 +94,7 @@ export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => 
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 
-    const deleted = await pesertaService.hapusPeserta(id);
-
-    if (!deleted) {
-        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
-    }
+    await pesertaService.hapusPeserta(id);
 
     res.status(204).send();
 });

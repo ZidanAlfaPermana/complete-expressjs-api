@@ -97,7 +97,7 @@ export class PesertaService {
 
     async hapusPeserta(id: number) {
         const result = await this.repo.delete(id);
-        if (!result.affected) throw new NotFoundError("Peserta");
+        if (!result.affected) throw new NotFoundError(`Peserta dengan id ${id}`);
     }
 
     async ubahProfil(id: number, data: UpdateProfilDto) {
