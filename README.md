@@ -425,3 +425,84 @@ it("register menyimpan hash dan tidak membocorkan password", async () => {
     expect(hasil).not.toHaveProperty("password");
 });
 ```
+
+# Panduan Menjalankan Automated Testing
+
+Dokumen ini berisi panduan lengkap mengenai cara menyiapkan lingkungan pengujian (database test) serta menjalankan berbagai jenis automated testing pada proyek ini.
+
+---
+
+## 1. Persiapan Database Test
+
+Sebelum menjalankan unit test atau integration test yang berinteraksi dengan database, pastikan database khusus pengujian (*test database*) sudah disiapkan agar tidak mengganggu data di lingkungan *development* atau *production*.
+
+### Langkah-Langkah Menyiapkan Database Test:
+
+1. **Buat Database Baru Khusus Test**
+   Buat database baru di DBMS kamu (misalnya PostgreSQL / MySQL / MongoDB):
+   ```sql
+   CREATE DATABASE magang_test;
+   ```
+
+2. **Atur Environment Variables (`.env.test`)**
+   Buat file `.env.test` di akar direktori proyek dan isi koneksi database yang mengarah ke database test:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=magang_test
+   DB_USER=dbuser
+   DB_PASSWORD=dbpassword
+   JWT_SECRET=secret-code
+   JWT_REFRESH_SECRET=secret-code
+   ```
+
+3. **Jalankan Migrasi & Schema=**
+   ```bash
+     npm run migrate
+     ```
+
+---
+
+## 2. Perintah-Perintah Menjalankan Test
+
+Proyek ini menyediakan beberapa *script* bawaan di `package.json` untuk menjalankan test sesuai kebutuhan.
+
+### 2.1. Jalankan Seluruh Test (Unit Test / Default)
+Menjalankan seluruh rangkaian pengujian standar atau unit test.
+
+```bash
+npm test
+```
+
+---
+
+### 2.2. Jalankan Integration Test
+Menjalankan pengujian integrasi yang menguji alur kerja antar modul (termasuk interaksi langsung dengan database test dan endpoint API).
+
+```bash
+npm run test:int
+```
+
+> **Catatan:** Pastikan server/container database test sudah dalam keadaan aktif sebelum menjalankan perintah ini.
+
+---
+
+### 2.3. Jalankan Test dengan Coverage (Laporan Cakupan Kode)
+Menjalankan seluruh test sekaligus menghitung persentase baris kode, fungsi, dan cabang (*branches*) yang sudah tersentuh oleh test.
+
+```bash
+npm run test:coverage
+```
+
+Setelah perintah selesai dijalankan, kamu bisa melihat ringkasan coverage di terminal atau membuka laporan HTML mendalam di folder `coverage/`:
+* Buka file `coverage/lcov-report/index.html` pada browser untuk melihat visualisasi cakupan kode per file secara detail.
+
+---
+
+## Ringkasan Perintah Quick-Reference
+
+| Perintah | Deskripsi |
+| :--- | :--- |
+| `npm test` | Menjalankan seluruh unit test standar |
+| `npm run test:int` | Menjalankan pengujian integrasi (API & DB) |
+| `npm run test:coverage` | Menjalankan test dan membuat laporan cakupan kode (*code coverage*) |

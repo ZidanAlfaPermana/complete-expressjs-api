@@ -15,6 +15,7 @@
 | 9 | `src/services/peserta.service.ts` | `getSemuaPeserta` | `skip: (lq.page - 1) * lq.limit` | `skip: lq.page * lq.limit`                              |
 | 10 | `src/routes/peserta.routes.ts` | route `DELETE /peserta/:id` | role yang diizinkan hanya `mentor` | menambah `peserta` ke daftar role                       |
 
+
 ## Log hasil
 
 | No | File dan fungsi | Hasil    | Test yang gagal                                                                              |
