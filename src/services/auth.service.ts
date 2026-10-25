@@ -16,7 +16,7 @@ interface LoginInput {
     password: string;
 }
 
-const MASA_BERLAKU_REFRESH_TOKEN_MS = 7 * 24 * 60 * 60 * 1000;
+const MASA_BERLAKU_REFRESH_TOKEN_MS = 7 * 24 * 60 * 60 * 1000 /*6 * 24 * 60 * 60 * 1000*/;
 
 export class AuthService {
     constructor(
@@ -26,7 +26,7 @@ export class AuthService {
 
     async login(data: LoginInput) {
         const peserta = await this.pesertaRepo.cariDenganPassword(data.email);
-        if (!peserta) throw this.kredensialSalah();
+        if (!peserta) /*throw this.kredensialSalah();*/ throw new UnauthorizedError("Email tidak ditemukan");
 
         const passwordCocok = await cekPassword(data.password, peserta.password);
         if (!passwordCocok) throw this.kredensialSalah();
@@ -53,7 +53,7 @@ export class AuthService {
             nama: data.nama,
             sekolah: data.sekolah,
             email: data.email,
-            password: await hashPassword(data.password),
+            password: await hashPassword(data.password), /*data.password,*/
             fase: 1,
             role: "peserta",
             skills: [],

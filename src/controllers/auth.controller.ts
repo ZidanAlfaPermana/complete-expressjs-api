@@ -38,7 +38,7 @@ export const logout = asyncHandler(async (req, res) => {
 
     const token = authHeader.split(" ")[1];
     await authService.logout(token);
-    response.sukses(res, 200);
+    res.status(204).send();
 })
 
 export const refresh = asyncHandler(async (req, res) => {

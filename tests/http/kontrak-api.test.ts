@@ -83,6 +83,15 @@ describe("Otorisasi (role)", () => {
         expect(jurnalService.getSemuaJurnal).not.toHaveBeenCalled();
     });
 
+    it("403 jika peserta mencoba menghapus peserta", async () => {
+        const res = await request(app)
+            .delete("/api/v1/peserta/1")
+            .set("Authorization", bearer(tokenPeserta()));
+
+        expect(res.status).toBe(403);
+        expect(pesertaService.hapusPeserta).not.toHaveBeenCalled();
+    });
+
     it("200 dengan meta pagination jika mentor mengakses daftar jurnal", async () => {
         jest.mocked(jurnalService.getSemuaJurnal).mockResolvedValue({ data: [], total: 0 } as never);
 

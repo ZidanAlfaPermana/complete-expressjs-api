@@ -96,7 +96,7 @@ export class JurnalService {
         catatan?: string,
         emailReviewer?: string
     ) {
-        if (pengguna.role !== "mentor") {
+        if (pengguna.role !== "mentor" /*pengguna.role !== "mentor" && false*/) {
             throw new ForbiddenError("Hanya mentor yang boleh me-review jurnal");
         }
 
@@ -129,7 +129,7 @@ export class JurnalService {
     }
 
     private pastikanPemilik(jurnal: JurnalHarian, pengguna: Pengguna) {
-        if (jurnal.pesertaId !== pengguna.id) {
+        if (jurnal.pesertaId !== pengguna.id /*jurnal.pesertaId === pengguna.id*/) {
             throw new ForbiddenError("Anda tidak boleh mengubah jurnal milik peserta lain");
         }
     }
@@ -138,7 +138,7 @@ export class JurnalService {
         const jurnal = await this.cariJurnalAtauGagal(id);
         this.pastikanPemilik(jurnal, pengguna);
 
-        if (jurnal.statusReview === "sudah") {
+        if (jurnal.statusReview === "sudah" /*jurnal.statusReview === "belum"*/) {
             throw new ConflictError("Jurnal yang sudah direview tidak dapat diedit");
         }
         return jurnal;

@@ -90,7 +90,7 @@ export const updateProfileSaya = asyncHandler(async (req: Request, res: Response
 export const hapusPeserta = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
 
-    if (req.user!.role !== "mentor") {
+    if (req.user!.role !== "mentor"/* && req.user!.role !== "peserta"*/) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 

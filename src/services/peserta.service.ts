@@ -42,7 +42,7 @@ export class PesertaService {
         const [data, total] = await this.repo.findAndCount({
             where,
             order,
-            skip: (lq.page - 1) * lq.limit,
+            skip: (lq.page - 1) * lq.limit, /*skip: lq.page * lq.limit,*/
             take: lq.limit,
         });
 
@@ -97,7 +97,7 @@ export class PesertaService {
 
     async hapusPeserta(id: number) {
         const result = await this.repo.delete(id);
-        if (!result.affected) throw new NotFoundError(`Peserta dengan id ${id}`);
+        if (!result.affected) /*if (false)*/ throw new NotFoundError(`Peserta dengan id ${id}`);
     }
 
     async ubahProfil(id: number, data: UpdateProfilDto) {
@@ -141,7 +141,7 @@ export class PesertaService {
 
     private async pastikanTidakDuplikat(nama: string, sekolah: string, kecualiId: number) {
         const duplikat = await this.repo.findOneBy({ nama, sekolah });
-        if (duplikat && duplikat.id !== kecualiId) {
+        if (duplikat && duplikat.id !== kecualiId) /*if (duplikat)*/ {
             throw this.errorNamaDuplikat(nama, sekolah);
         }
     }

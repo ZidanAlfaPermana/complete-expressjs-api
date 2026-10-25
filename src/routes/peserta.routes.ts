@@ -14,6 +14,6 @@ router.get("/:id/jurnal", AuthMiddleware.authGuard, ValidationMiddleware.validas
 router.post("/", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), ValidationMiddleware.validasi(PesertaDto), PesertaController.buatPeserta);
 router.put("/:id", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), ValidationMiddleware.validasi(IdParamDto, "params"), ValidationMiddleware.validasi(PesertaDto), PesertaController.updatePeserta);
 router.patch("/:id", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), ValidationMiddleware.validasi(IdParamDto, "params"), ValidationMiddleware.validasi(PesertaDto), PesertaController.updateProfilePeserta);
-router.delete("/:id", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), ValidationMiddleware.validasi(IdParamDto, "params"), PesertaController.hapusPeserta);
+router.delete("/:id", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"/*, "peserta"*/), ValidationMiddleware.validasi(IdParamDto, "params"), PesertaController.hapusPeserta);
 
 export default router;
