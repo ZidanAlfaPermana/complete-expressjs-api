@@ -26,7 +26,7 @@ export class AuthService {
 
     async login(data: LoginInput) {
         const peserta = await this.pesertaRepo.cariDenganPassword(data.email);
-        if (!peserta) /*throw this.kredensialSalah();*/ throw new UnauthorizedError("Email tidak ditemukan");
+        if (!peserta) throw this.kredensialSalah();/* throw new UnauthorizedError("Email tidak ditemukan");*/
 
         const passwordCocok = await cekPassword(data.password, peserta.password);
         if (!passwordCocok) throw this.kredensialSalah();

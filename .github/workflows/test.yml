@@ -29,6 +29,8 @@ jobs:
       DB_PASSWORD: test
       JWT_SECRET: secret-ci
       JWT_REFRESH_SECRET: refresh-ci
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
 
     steps:
       - uses: actions/checkout@v4
