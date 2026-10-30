@@ -9,10 +9,32 @@ import routes from "./routes";
 import {errorHandler, notFoundHandler} from "./middlewares/error.middleware";
 import {config} from "./config/env.config";
 import express from "express";
+import swaggerUi from "swagger-ui-express";
+import { spec } from "./docs/swagger";
 
 export const app: Application = express();
 
 app.use(requestId);                                  // 1. beri ID dulu, supaya semua log punya ID
+if (config.docs.enabled) {
+    // Dokumen mentah (JSON) — dipakai Postman dan generator tipe
+    app.get("/api/docs.json", (_req, res) => {
+        res.json(spec);
+    });
+
+    app.use(helmet())
+
+    // Dipasang sebelum helmet global: CSP bawaan helmet bisa memblokir aset Swagger UI
+    app.use(
+        "/api/docs",
+        helmet({ contentSecurityPolicy: false }),
+        swaggerUi.serve,
+        swaggerUi.setup(spec, {
+            customSiteTitle: "API Magang Batch 4 — Dokumentasi",
+            swaggerOptions: { persistAuthorization: true, docExpansion: "list" },
+        })
+    );
+}
+
 app.use(helmet());                                   // 2. security header standar
 app.use(cors({
     origin: config.cors.origins,                       //    daftar origin yang diizinkan

@@ -506,3 +506,11 @@ Setelah perintah selesai dijalankan, kamu bisa melihat ringkasan coverage di ter
 | `npm test` | Menjalankan seluruh unit test standar |
 | `npm run test:int` | Menjalankan pengujian integrasi (API & DB) |
 | `npm run test:coverage` | Menjalankan test dan membuat laporan cakupan kode (*code coverage*) |
+
+---
+
+## Apa beda OpenAPI dan Swagger?
+OpenAPI adalah spesifikasi, yaitu standar format untuk mendeskripsikan REST API, sedangkan Swagger adalah kumpulan tool (Swagger UI, Editor, Codegen) yang membaca dan memakai spesifikasi tersebut. Dulu spesifikasinya sendiri bernama Swagger, lalu diganti menjadi OpenAPI sejak versi 3.
+
+## Kenapa dokumen API perlu dibuat bahkan kalau kamu sendiri yang menulis seluruh kodenya?
+Dokumen API tetap perlu dibuat walau kita menulis semua kodenya, karena kode tidak menjelaskan cara pemakaian, format request/response, dan kemungkinan error dengan jelas bagi orang lain. Dokumen ini membantu tim frontend, mentor, atau developer baru memakai API tanpa membaca source code, dan bisa langsung dicoba lewat Try it out. Bahkan kita sendiri bisa lupa detail endpoint beberapa bulan kemudian.
