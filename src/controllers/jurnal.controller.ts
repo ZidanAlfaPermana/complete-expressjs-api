@@ -1,16 +1,13 @@
 import { Request, Response } from "express";
-import {jurnalService, JurnalService, pesertaService} from "../services";
+import {jurnalService, pesertaService} from "../services";
 import { asyncHandler } from "../utils/asyncHandler";
 import {response, authUtils, AppError} from "../utils";
-import { RoleMiddleware } from "../middlewares"
 import {buatMeta} from "../utils/pagination";
 import {IdParamDto} from "../dto/common.dto";
 import {ambilDto} from "../middlewares/validasi.middleware";
 import {JurnalDto, ListJurnalQueryDto, ReviewJurnalDto} from "../dto/jurnal.dto";
 import {serialisasi} from "../utils/serialisasi";
 import {JurnalResponseDto} from "../dto/response/jurnal.response";
-import {AppDataSource} from "../config/database.config";
-import {JurnalHarian, Mentor, Peserta} from "../entities";
 
 interface JurnalBody {
     pesertaId: number;
@@ -54,39 +51,32 @@ export const getJurnalSaya = asyncHandler(async (req: Request, res: Response) =>
 export const getJurnalById = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
     const jurnal = await jurnalService.getJurnalById(id);
-    const userId = req.user!.id;
-
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 
-    if (authUtils.isUserSame(userId, userIdFromJurnal) || !RoleMiddleware.requireRole("mentor")) {
-        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    const bolehAkses = req.user!.role === "mentor" || authUtils.isUserSame(req.user!.id, userIdFromJurnal);
+    if (!bolehAkses) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk melihat data ini");
     }
 
-    if (!jurnal) {
-        res.status(404).json({ error: `Jurnal dengan id ${id} tidak ditemukan` });
-        return;
-    }
-
-    response.sukses(res, jurnal)
+    response.sukses(res, jurnal);
 });
 
 export const getJurnalPesertaById = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
-    const jurnal = await pesertaService.getPesertaDenganJurnal(id);
     const userId = req.user!.id;
 
-    const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
-
-    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
-        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
+    const bolehAkses = req.user!.role === "mentor" || authUtils.isUserSame(userId, id);
+    if (!bolehAkses) {
+        throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk melihat data ini");
     }
 
-    if (!jurnal || typeof jurnal === null ) {
-        res.status(404).json({ error: `Jurnal dengan Peserta id ${id} tidak ditemukan` });
-        return;
+    const jurnal = await pesertaService.getPesertaDenganJurnal(id);
+
+    if (!jurnal) {
+        throw new AppError.NotFoundError(`Peserta dengan id ${id} tidak ditemukan`);
     }
 
-    response.sukses(res, jurnal)
+    response.sukses(res, jurnal);
 });
 
 export const getJurnalDenganPeserta = asyncHandler(async (req: Request, res: Response) => {
@@ -164,10 +154,10 @@ export const updateJurnalBeberapa = asyncHandler(async (req: Request, res: Respo
 
 export const hapusJurnal = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
-    const userId = req.user!.id;
     const userIdFromJurnal = await jurnalService.getUserIdFromJurnal(id);
 
-    if (authUtils.isUserSame(userId, userIdFromJurnal)) {
+    const bolehAkses = req.user!.role === "mentor" || authUtils.isUserSame(req.user!.id, userIdFromJurnal);
+    if (!bolehAkses) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
     const deleted = await jurnalService.hapusJurnal(id, { id: req.user!.id, role: req.user!.role });

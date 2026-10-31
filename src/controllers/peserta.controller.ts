@@ -58,7 +58,7 @@ export const buatPeserta = asyncHandler(async (req: Request<{}, {}, PesertaBody>
 export const updatePeserta = asyncHandler(async (req: Request, res: Response) => {
     const { id } = ambilDto<IdParamDto>(req, "params");
 
-    if (!authUtils.isUserSame(req.user!.id, id)) {
+    if (req.user!.role !== "mentor" && !authUtils.isUserSame(req.user!.id, id)) {
         throw new AppError.ForbiddenError("Anda tidak memiliki akses untuk mengubah data ini");
     }
 

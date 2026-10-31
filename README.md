@@ -514,3 +514,83 @@ OpenAPI adalah spesifikasi, yaitu standar format untuk mendeskripsikan REST API,
 
 ## Kenapa dokumen API perlu dibuat bahkan kalau kamu sendiri yang menulis seluruh kodenya?
 Dokumen API tetap perlu dibuat walau kita menulis semua kodenya, karena kode tidak menjelaskan cara pemakaian, format request/response, dan kemungkinan error dengan jelas bagi orang lain. Dokumen ini membantu tim frontend, mentor, atau developer baru memakai API tanpa membaca source code, dan bisa langsung dicoba lewat Try it out. Bahkan kita sendiri bisa lupa detail endpoint beberapa bulan kemudian.
+
+---
+
+# Pemetaan Decorator DTO ke Keyword OpenAPI
+
+Setiap batas di schema OpenAPI harus sama persis dengan batas di DTO. Ketidakcocokan membuat dokumentasi menyesatkan.
+
+## Padanan umum
+
+| Decorator | Keyword OpenAPI |
+|---|---|
+| `@IsString` | `type: string` |
+| `@IsInt` | `type: integer` |
+| `@IsBoolean` | `type: boolean` |
+| `@IsNotEmpty` | `minLength: 1` |
+| `@MinLength(n)` | `minLength: n` |
+| `@MaxLength(n)` | `maxLength: n` |
+| `@Min(n)` | `minimum: n` |
+| `@Max(n)` | `maximum: n` |
+| `@IsIn([...])` | `enum: [...]` |
+| `@Matches(regex)` | `pattern: regex` |
+| `@IsEmail` | `format: email` |
+| `@IsUrl` | `format: uri` |
+| `@IsArray` + `@ArrayMaxSize(n)` | `type: array`, `maxItems: n` |
+| `@IsInt({ each: true })` | `items: { type: integer }` |
+| `@ValidateNested` + `@Type` | `$ref` ke schema lain |
+| `@IsOptional` | tidak masuk `required` |
+| `@Trim`, `@KeHurufKecil` | tidak ada padanan (hanya transformasi), tulis `-` |
+| `@Sama` | tidak ada padanan langsung, jelaskan di `description` |
+
+## DTO 1: `RegisterDto` (schema `RegisterRequest`)
+
+| Properti | Decorator di DTO | Keyword di schema |
+|---|---|---|
+| `nama` | `@Trim`, `@IsString`, `@MinLength(3)`, `@MaxLength(100)` | `type: string`, `minLength: 3`, `maxLength: 100`, masuk `required` |
+| `sekolah` | `@IsString`, `@MinLength(3)`, `@MaxLength(100)` | `type: string`, `minLength: 3`, `maxLength: 100`, masuk `required` |
+| `email` | `@Trim`, `@KeHurufKecil`, `@IsEmail` | `type: string`, `format: email`, masuk `required` |
+| `password` | `@IsString`, `@MinLength(8)`, `@MaxLength(72)`, `@Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/)` | `type: string`, `format: password`, `writeOnly: true`, `minLength: 8`, `maxLength: 72`, `pattern: ^(?=.*[A-Za-z])(?=.*\d).+$`, masuk `required` |
+| `konfirmasiPassword` | `@IsString`, `@Sama("password")` | `type: string`, `format: password`, `writeOnly: true`, masuk `required`; aturan "harus sama dengan password" ditulis di `description` |
+
+## DTO 2: `PesertaDto` (schema `PesertaRequest`)
+
+| Properti | Decorator di DTO | Keyword di schema |
+|---|---|---|
+| `nama` | `@IsString`, `@Matches(/^\s*\S[\s\S]+\S\s*$/)`, `@MaxLength(50)` | `type: string`, `pattern: ^\s*\S[\s\S]+\S\s*$`, `maxLength: 50`, masuk `required` |
+| `sekolah` | `@IsNotEmpty`, `@IsString` | `type: string`, `minLength: 1`, masuk `required` |
+| `email` | `@IsString`, `@Matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)` | `type: string`, `pattern: ^[^\s@]+@[^\s@]+\.[^\s@]+$`, masuk `required` |
+| `status` | `@IsIn(["aktif", "lulus", "berhenti"])` | `type: string`, `enum: [aktif, lulus, berhenti]`, masuk `required` |
+| `telepon` | `@IsNotEmpty`, `@IsString` | `type: string`, `minLength: 1`, masuk `required` |
+| `fase` | `@IsInt`, `@Min(1)`, `@Max(5)` | `type: integer`, `minimum: 1`, `maximum: 5`, masuk `required` |
+| `skillIds` | `@IsOptional`, `@IsArray`, `@IsInt({ each: true })` | `type: array`, `items: { type: integer }`, tidak masuk `required` |
+| `role` | `@IsIn(["peserta", "mentor"])` | `type: string`, `enum: [peserta, mentor]`, masuk `required` |
+| `password` | `@IsString`, `@MinLength(8)` | `type: string`, `format: password`, `writeOnly: true`, `minLength: 8`, masuk `required` |
+
+## DTO 3: `JurnalDto` (schema `CreateJurnalRequest`)
+
+| Properti | Decorator di DTO | Keyword di schema |
+|---|---|---|
+| `kegiatan` | `@Trim`, `@IsString`, `@MinLength(10)`, `@MaxLength(2000)` | `type: string`, `minLength: 10`, `maxLength: 2000`, masuk `required` |
+| `hambatan` | `@IsOptional`, `@Trim`, `@IsString`, `@MaxLength(2000)` | `type: string`, `maxLength: 2000`, tidak masuk `required` |
+| `rencanaBesok` | `@Trim`, `@IsString`, `@MinLength(5)`, `@MaxLength(2000)` | `type: string`, `minLength: 5`, `maxLength: 2000`, masuk `required` |
+| `linkCommit` | `@IsOptional`, `@IsUrl` | `type: string`, `format: uri`, tidak masuk `required` |
+| `lampiran` | `@IsOptional`, `@IsArray`, `@ArrayMaxSize(5)`, `@ValidateNested`, `@Type(() => LampiranDto)` | `type: array`, `maxItems: 5`, `items: $ref Lampiran`, tidak masuk `required` |
+
+`LampiranDto` (nested di `lampiran`): `url` memakai `@IsUrl` menjadi `format: uri` (wajib), `keterangan` memakai `@IsOptional`, `@IsString`, `@MaxLength(200)` menjadi `maxLength: 200` (opsional).
+
+## Eksperimen `Object.values(ErrorCode)`
+
+`Perhatikan kode error pada schema ErrorResponse memakai Object.values(ErrorCode).
+Tambahkan satu ErrorCode baru sementara, lalu refresh /api/docs.json.
+Apa yang terjadi? Kenapa itu lebih baik daripada menulis daftar kode secara manual?`
+
+Saya menambahkan `TEST_ERROR` ke `ErrorCode`, lalu me-refresh `/api/docs.json`. Hasilnya, `TEST_ERROR` langsung muncul di daftar `enum` pada properti `kode` di schema `ErrorResponse`, tanpa mengubah satu baris pun di file dokumentasi.
+
+Cara ini lebih baik daripada menulis daftar kode secara manual karena:
+
+- `ErrorCode` menjadi satu-satunya sumber kebenaran. Kode error di aplikasi dan di dokumentasi tidak mungkin berbeda.
+- Daftar manual mudah ketinggalan: kode baru terlewat, atau kode yang sudah dihapus masih tercantum. Dokumentasi seperti itu menyesatkan.
+- Klien atau generator tipe yang membaca `/api/docs.json` selalu mendapat daftar kode terbaru.
+- Tidak ada pekerjaan tambahan setiap kali menambah kode error.

@@ -54,6 +54,4 @@ export class LoginDto {
 /*
 export class RefreshTokenDto {
     @IsNotEmpty({ message: "Token Refresh harus diisi"})
-
-
 }*/

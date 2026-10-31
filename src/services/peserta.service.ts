@@ -124,7 +124,8 @@ export class PesertaService {
         await this.pastikanTidakDuplikat(
             field.nama ?? peserta.nama,
             field.sekolah ?? peserta.sekolah,
-            id
+            id,
+            field.email ?? peserta.email,
         );
 
         const perubahan: DeepPartial<Peserta> = hanyaYangDiisi(field);
@@ -139,15 +140,23 @@ export class PesertaService {
         return this.cariById(id);
     }
 
-    private async pastikanTidakDuplikat(nama: string, sekolah: string, kecualiId: number) {
+    private async pastikanTidakDuplikat(nama: string, sekolah: string, kecualiId: number, email: string) {
         const duplikat = await this.repo.findOneBy({ nama, sekolah });
+        const emailduplikat = await this.repo.findOneBy({ email });
         if (duplikat && duplikat.id !== kecualiId) /*if (duplikat)*/ {
             throw this.errorNamaDuplikat(nama, sekolah);
+        }
+        if (emailduplikat && emailduplikat.id !== kecualiId) {
+            throw this.errorEmailDuplikat(email);
         }
     }
 
     private errorNamaDuplikat(nama: string, sekolah: string) {
         return new ConflictError(`Peserta bernama ${nama} dari sekolah ${sekolah} sudah terdaftar!`);
+    }
+
+    private errorEmailDuplikat(email: string) {
+        return new ConflictError(`Peserta dengan email ${email} sudah terdaftar!`);
     }
 
     private toSkills(ids?: number[]) {

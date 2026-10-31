@@ -10,6 +10,7 @@ export const ErrorCode = {
     RATE_LIMITED: "RATE_LIMITED",
     INTERNAL_ERROR: "INTERNAL_ERROR",
     PAYLOAD_TOO_LARGE: "PAYLOAD_TOO_LARGE",
+    /*TEST_ERROR: "TEST_ERROR",*/
 } as const;
 
 // Union type otomatis: "VALIDATION_ERROR" | "INVALID_JSON" | ...
