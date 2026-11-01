@@ -196,10 +196,9 @@ export const components = {
         Lampiran: {
             type: "object",
             required: ["url"],
-            additionalProperties: false,
             properties: {
-                url: { type: "string", format: "uri", example: "https://drive.google.com/file/d/abc" },
-                keterangan: { type: "string", maxLength: 200, example: "Screenshot halaman login" },
+                url: { type: "string", format: "uri", example: "https://contoh.com/screenshot.png" },
+                keterangan: { type: "string", maxLength: 200 },
             },
         },
 
@@ -222,12 +221,13 @@ export const components = {
 
         CreateJurnalRequest: {
             type: "object",
-            required: ["kegiatan", "rencanaBesok"],
+            required: ["kegiatan"],
             additionalProperties: false,
+            description:
+                "pesertaId TIDAK dikirim lewat body; diambil dari token. Mengirimnya menghasilkan 422.",
             properties: {
                 kegiatan: { type: "string", minLength: 10, maxLength: 2000 },
                 hambatan: { type: "string", maxLength: 2000 },
-                rencanaBesok: { type: "string", minLength: 5, maxLength: 2000 },
                 linkCommit: { type: "string", format: "uri" },
                 lampiran: { type: "array", maxItems: 5, items: ref("Lampiran") },
             },
@@ -247,17 +247,28 @@ export const components = {
         },
 
         ReviewJurnalRequest: {
-            type: "object",
-            required: ["statusReview"],
-            additionalProperties: false,
-            properties: {
-                statusReview: { type: "string", enum: ["belum", "sudah"] },
-                catatan: {
-                    type: "string",
-                    minLength: 5,
-                    description: "Wajib diisi jika statusReview bernilai sudah",
+            oneOf: [
+                {
+                    type: "object",
+                    title: "Ditandai sudah direview (catatan wajib)",
+                    required: ["statusReview", "catatan"],
+                    additionalProperties: false,
+                    properties: {
+                        statusReview: { type: "string", enum: ["sudah"] },
+                        catatan: { type: "string", minLength: 5, example: "Sudah bagus, lanjutkan." },
+                    },
                 },
-            },
+                {
+                    type: "object",
+                    title: "Dikembalikan ke belum direview (catatan opsional)",
+                    required: ["statusReview"],
+                    additionalProperties: false,
+                    properties: {
+                        statusReview: { type: "string", enum: ["belum"] },
+                        catatan: { type: "string", minLength: 5 },
+                    },
+                },
+            ],
         },
 
         // Pembungkus: bentuk response sukses
@@ -356,10 +367,17 @@ export const components = {
             },
         }),
 
-        TooManyRequests: {
-            ...responsError("Terlalu banyak percobaan", {
+        TooManyRequests: (() => {
+            const dasar = responsError("Terlalu banyak percobaan", {
                 default: { summary: "Rate limit terlampaui", value: contohError("RATE_LIMITED", "Terlalu banyak percobaan, coba lagi nanti") },
-            }),
-        },
+            });
+            return {
+                ...dasar,
+                headers: {
+                    ...dasar.headers,
+                    "Retry-After": { $ref: "#/components/headers/RetryAfter" },
+                },
+            };
+        })(),
     },
 };

@@ -1266,15 +1266,20 @@
 
 # Endpoint Audit
 
-| No | Method | Path | Login? | Role | Body DTO | Query DTO | Params DTO | Response DTO | Status | Catatan | Test |
-| ---- | -------- | ------ | -------- | ------ | ---------- | ----------- | ------------ | -------------- | -------- | --------- | --- |
-| 1 | POST | /register | Tidak | - | RegisterDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 2 | POST | /login | Tidak | - | LoginDto | - | - | TokenResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 3 | GET | /peserta | Ya | mentor | - | ListPesertaQueryDto | - | PesertaResponseDto[] | ✅ |  | 🔴 Belum ada test |
-| 4 | GET | /peserta/:id | Ya | mentor | - | - | IdParamDto | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 5 | GET | /peserta/me | Ya | peserta | - | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 6 | PATCH | /peserta/me | Ya | peserta | UpdateProfilDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 7 | GET | /jurnal | Ya | mentor | - | ListJurnalQueryDto | - | JurnalResponseDto[] | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 8 | POST | /jurnal | Ya | peserta | CreateJurnalDto | - | - | JurnalResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
-| 9 | PATCH | /jurnal/:id | Ya | peserta | UpdateJurnalDto | - | IdParamDto | JurnalResponseDto | ✅ |  | 🔴 Belum ada test |
-| 10 | DELETE | /jurnal/:id | Ya | peserta | - | - | IdParamDto | - (204) | ✅ |  | 🔴 Belum ada test |
+| No | Method | Path | Login? | Role                | Body DTO | Query DTO | Params DTO | Response DTO | Status | Catatan | Test |
+| ---- | -------- | ------ | -------- |---------------------| ---------- | ----------- | ------------ | -------------- | -------- | --------- | --- |
+| 1 | POST | /register | Tidak | -                   | RegisterDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 2 | POST | /login | Tidak | -                   | LoginDto | - | - | TokenResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 3 | GET | /peserta | Ya | mentor              | - | ListPesertaQueryDto | - | PesertaResponseDto[] | ✅ |  | 🔴 Belum ada test |
+| 4 | GET | /peserta/:id | Ya | mentor atau pemilik | - | - | IdParamDto | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 5 | GET | /peserta/me | Ya | peserta             | - | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 6 | PATCH | /peserta/me | Ya | peserta             | UpdateProfilDto | - | - | PesertaResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 7 | GET | /jurnal | Ya | mentor              | - | ListJurnalQueryDto | - | JurnalResponseDto[] | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 8 | POST | /jurnal | Ya | peserta atau mentor | CreateJurnalDto | - | - | JurnalResponseDto | ✅ |  | `tests/http/kontrak-api.test.ts` |
+| 9 | PATCH | /jurnal/:id | Ya | peserta             | UpdateJurnalDto | - | IdParamDto | JurnalResponseDto | ✅ |  | 🔴 Belum ada test |
+| 10 | DELETE | /jurnal/:id | Ya | peserta             | - | - | IdParamDto | - (204) | ✅ |  | 🔴 Belum ada test |
+| 11 | PATCH | /peserta/:id | Ya | mentor              | PesertaDto | - | IdParamDto | PesertaResponseDto | ✅ | Memakai PesertaDto, jadi semua field masih wajib | 🔴 Belum ada test |
+| 12 | POST | /refresh | Ya | -                   | - | - | - | TokenResponseDto | ✅ | Refresh token dikirim lewat header Bearer, bukan body | 🔴 Belum ada test |
+| 13 | POST | /logout | Ya | -                   | - | - | - | - | ✅ | Refresh token dikirim lewat header Bearer | 🔴 Belum ada test |
+| 14 | GET | /health | Tidak | -                   | - | - | - | - | ✅ | Liveness, tidak mengecek database | 🔴 Belum ada test |
+| 15 | GET | /health/ready | Tidak | -                   | - | - | - | - | ✅ | Readiness, 503 jika database mati | 🔴 Belum ada test |

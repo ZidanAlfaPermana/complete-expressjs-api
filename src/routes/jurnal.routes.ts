@@ -66,13 +66,24 @@ const router = Router();
  *       - $ref: '#/components/parameters/Page'
  *       - $ref: '#/components/parameters/Limit'
  *       - $ref: '#/components/parameters/Order'
- *       - $ref: '#/components/parameters/Q'
- *       - $ref: '#/components/parameters/SortByJurnal'
- *       - $ref: '#/components/parameters/PesertaId'
- *       - $ref: '#/components/parameters/StatusReview'
- *       - $ref: '#/components/parameters/From'
- *       - $ref: '#/components/parameters/To'
- *       - $ref: '#/components/parameters/BelumDireview'
+ *       - in: query
+ *         name: sortBy
+ *         schema: { type: string, enum: [createdAt, statusReview], default: createdAt }
+ *       - in: query
+ *         name: pesertaId
+ *         schema: { type: integer, minimum: 1 }
+ *       - in: query
+ *         name: statusReview
+ *         schema: { type: string, enum: [belum, sudah] }
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: belumDireview
+ *         schema: { type: boolean }
  *     responses:
  *       '200':
  *         description: Berhasil
@@ -102,6 +113,20 @@ const router = Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CreateJurnalRequest'
+ *           examples:
+ *             sederhana:
+ *               summary: Tanpa lampiran
+ *               value:
+ *                 kegiatan: Belajar unit testing dengan Jest dan Supertest
+ *             denganLampiran:
+ *               summary: Dengan lampiran tangkapan layar
+ *               value:
+ *                 kegiatan: Menulis test untuk DTO dan service
+ *                 hambatan: Bingung cara mock repository
+ *                 linkCommit: https://github.com/budi/api-magang/commit/abc123
+ *                 lampiran:
+ *                   - url: https://contoh.com/ss1.png
+ *                     keterangan: Hasil npm test
  *     responses:
  *       '201':
  *         description: Jurnal berhasil dibuat
@@ -199,6 +224,18 @@ const router = Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateJurnalRequest'
+ *           examples:
+ *             ubahKegiatan:
+ *               summary: Mengubah satu field
+ *               value:
+ *                 kegiatan: Menulis test untuk DTO, service, dan controller jurnal
+ *             ubahBeberapaField:
+ *               summary: Mengubah hambatan dan lampiran
+ *               value:
+ *                 hambatan: Mock repository sudah teratasi
+ *                 lampiran:
+ *                   - url: https://contoh.com/ss2.png
+ *                     keterangan: Hasil npm run test:coverage
  *     responses:
  *       '200':
  *         description: Jurnal berhasil diubah
@@ -259,6 +296,16 @@ const router = Router();
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/ReviewJurnalRequest'
+ *           examples:
+ *             tandaiSudah:
+ *               summary: Tandai sudah direview (catatan wajib)
+ *               value:
+ *                 statusReview: sudah
+ *                 catatan: Sudah bagus, lanjutkan ke tahap integrasi
+ *             tandaiBelum:
+ *               summary: Kembalikan ke belum direview
+ *               value:
+ *                 statusReview: belum
  *     responses:
  *       '200':
  *         description: Status review berhasil diubah
@@ -278,7 +325,23 @@ const router = Router();
  *       '413':
  *         $ref: '#/components/responses/PayloadTooLarge'
  *       '422':
- *         $ref: '#/components/responses/ValidationError'
+ *         description: Input tidak lolos validasi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               catatanKosong:
+ *                 summary: Menandai sudah tanpa catatan
+ *                 value:
+ *                   sukses: false
+ *                   error:
+ *                     kode: VALIDATION_ERROR
+ *                     pesan: Validasi gagal
+ *                     detail:
+ *                       - field: catatan
+ *                         pesan: Catatan wajib diisi saat jurnal ditandai sudah direview
+ *                   requestId: b7a1c9e2-4f6d-4a9b-8d3e-1c2f5a7e9b10
  *       '400':
  *         $ref: '#/components/responses/InvalidJson'
  */

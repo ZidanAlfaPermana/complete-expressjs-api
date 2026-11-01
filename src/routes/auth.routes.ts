@@ -63,12 +63,6 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  *       '429':
  *          $ref: '#/components/responses/TooManyRequests'
- *          description: Terlalu banyak percobaan login
- *          headers:
- *            X-Request-Id:
- *              $ref: '#/components/headers/XRequestId'
- *            Retry-After:
- *              $ref: '#/components/headers/RetryAfter'
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  *       '400':

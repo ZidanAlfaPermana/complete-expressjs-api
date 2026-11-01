@@ -45,8 +45,8 @@ const router = Router();
  *           examples:
  *             ubahNama:
  *               summary: Ubah nama saja
- *             value:
- *               nama: Budi Santoso Putra
+ *               value:
+ *                 nama: Budi Santoso Putra
  *     responses:
  *       '200':
  *         description: Profil berhasil diubah
@@ -72,7 +72,8 @@ const router = Router();
  *     description: |
  *       Mendukung pagination, filter, pengurutan, dan pencarian pada nama atau email.
  *       Parameter yang tidak valid ditolak dengan 422 (tidak dikoreksi diam-diam).
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - $ref: '#/components/parameters/Page'
  *       - $ref: '#/components/parameters/Limit'
@@ -104,6 +105,10 @@ const router = Router();
  *               $ref: '#/components/schemas/PesertaListResponse'
  *       '422':
  *         $ref: '#/components/responses/ValidationError'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
  *   post:
  *     tags: [Peserta]
  *     summary: Mendaftarkan peserta baru secara manual (khusus mentor)
@@ -310,7 +315,7 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  */
 
-router.get("/", ValidationMiddleware.validasi(ListPesertaQueryDto, "query"), PesertaController.getSemuaPeserta);
+router.get("/", AuthMiddleware.authGuard, RoleMiddleware.requireRole("mentor"), ValidationMiddleware.validasi(ListPesertaQueryDto, "query"), PesertaController.getSemuaPeserta);
 router.get("/me", AuthMiddleware.authGuard, PesertaController.getProfilSaya);
 router.patch("/me", AuthMiddleware.authGuard, ValidationMiddleware.validasi(UpdateProfilDto), PesertaController.updateProfileSaya);
 router.get("/:id", AuthMiddleware.authGuard, ValidationMiddleware.validasi(IdParamDto, "params"), PesertaController.getPesertaById);
