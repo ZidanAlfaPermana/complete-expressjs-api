@@ -11,6 +11,11 @@ const router = Router();
  *   post:
  *     tags: [Auth]
  *     summary: Registrasi peserta baru
+ *     description: |
+ *       Membuat akun dengan role `peserta`.
+ *       - Email dinormalkan (spasi tepi dibuang, huruf kecil), sehingga
+ *         `Budi@Mail.com` dan `budi@mail.com` dianggap email yang sama.
+ *       - Properti di luar yang tercantum ditolak (422).
  *     security: []
  *     requestBody:
  *       required: true
@@ -29,12 +34,18 @@ const router = Router();
  *         $ref: '#/components/responses/Conflict'
  *       '422':
  *         $ref: '#/components/responses/ValidationError'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  *
  * /login:
  *   post:
  *     tags: [Auth]
  *     summary: Login dengan akun yang tersedia
  *     security: []
+ *     description: |
+ *       Pesan error SAMA untuk email yang tidak terdaftar maupun password yang salah
+ *       (supaya penyerang tidak bisa menebak email mana yang valid).
+ *       Dibatasi 10 percobaan per 15 menit per IP.
  *     requestBody:
  *       required: true
  *       content:
@@ -42,7 +53,7 @@ const router = Router();
  *           schema:
  *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
- *       '201':
+ *       '200':
  *         description: Login berhasil
  *         content:
  *           application/json:
@@ -51,16 +62,30 @@ const router = Router();
  *       '422':
  *         $ref: '#/components/responses/ValidationError'
  *       '429':
- *         $ref: '#/components/responses/TooManyRequests'
+ *          $ref: '#/components/responses/TooManyRequests'
+ *          description: Terlalu banyak percobaan login
+ *          headers:
+ *            X-Request-Id:
+ *              $ref: '#/components/headers/XRequestId'
+ *            Retry-After:
+ *              $ref: '#/components/headers/RetryAfter'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  *
  * /refresh:
  *   post:
  *     tags: [Auth]
  *     summary: Refresh Token akses untuk api
+ *     description: |
+ *       Menukar refresh token dengan access token baru. Kirim refresh token
+ *       lewat header Authorization (Bearer), bukan lewat body.
+ *       Access token berlaku 15 menit, refresh token berlaku 7 hari.
  *     security:
  *       - refreshAuth: []
  *     responses:
- *       '201':
+ *       '200':
  *         description: Refresh Token berhasil
  *         content:
  *           application/json:
@@ -73,6 +98,10 @@ const router = Router();
  *   post:
  *     tags: [Auth]
  *     summary: Logout akun yang sedang login
+ *     description: |
+ *       Mengakhiri sesi dengan mencabut refresh token yang dikirim lewat
+ *       header Authorization (Bearer). Setelah logout, refresh token itu
+ *       tidak bisa lagi ditukar dengan access token baru.
  *     security:
  *       - bearerAuth: []
  *     responses:

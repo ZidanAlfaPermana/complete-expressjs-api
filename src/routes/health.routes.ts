@@ -12,6 +12,10 @@ const router = Router();
  *   get:
  *     tags: [Sistem]
  *     summary: Cek apakah server hidup (liveness)
+ *     description: |
+ *       Liveness check: memastikan proses server berjalan. Tidak mengecek
+ *       database, jadi tetap 200 selama server hidup. Uptime dalam detik.
+ *       Cocok untuk monitoring dan health check container.
  *     security: []
  *     servers:
  *       - url: /api/v1
@@ -29,6 +33,10 @@ const router = Router();
  *   get:
  *     tags: [Sistem]
  *     summary: Cek apakah server siap melayani (database terhubung)
+ *     description: |
+ *       Readiness check: memastikan server siap melayani request, yaitu
+ *       koneksi database aktif. Mengembalikan 200 jika database terhubung
+ *       dan 503 jika database tidak bisa dihubungi.
  *     security: []
  *     servers:
  *       - url: /api/v1

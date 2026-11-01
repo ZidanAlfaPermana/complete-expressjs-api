@@ -54,6 +54,10 @@ export const components = {
             description: "ID unik request, gunakan saat melapor error agar mudah dilacak di log",
             schema: { type: "string", format: "uuid" },
         },
+        RetryAfter: {
+            description: "Jumlah detik yang harus ditunggu sebelum boleh mencoba lagi",
+            schema: { type: "integer", example: 900 },
+        },
     },
 
     schemas: {
@@ -326,6 +330,10 @@ export const components = {
 
         NotFound: responsError("Data tidak ditemukan", {
             default: { summary: "Data tidak ada", value: contohError("NOT_FOUND", "Data tidak ditemukan") },
+        }),
+
+        InvalidJson: responsError("Data JSON yang dikirim rusak", {
+            default: { summary: "Data JSON rusak", value: contohError("INVALID_JSON", "Format JSON pada body tidak valid") },
         }),
 
         Conflict: responsError("Bentrok dengan data yang sudah ada", {

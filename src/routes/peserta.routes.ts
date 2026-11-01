@@ -12,6 +12,9 @@ const router = Router();
  *   get:
  *     tags: [Profil]
  *     summary: Ambil profil pengguna yang sedang login
+ *     description: |
+ *       Mengembalikan data profil milik pengguna yang sedang login.
+ *       Identitas diambil dari token, jadi tidak perlu mengirim id.
  *     responses:
  *       '200':
  *         description: Berhasil
@@ -29,12 +32,21 @@ const router = Router();
  *   patch:
  *     tags: [Profil]
  *     summary: Ubah profil pengguna yang sedang login
+ *     description: |
+ *       Hanya `nama`, `sekolah`, dan `telepon` yang boleh diubah.
+ *       Properti lain (termasuk `role`, `email`, `password`) **ditolak dengan 422**
+ *       untuk mencegah mass assignment. Minimal satu field harus diisi.
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateProfilRequest'
+ *           examples:
+ *             ubahNama:
+ *               summary: Ubah nama saja
+ *             value:
+ *               nama: Budi Santoso Putra
  *     responses:
  *       '200':
  *         description: Profil berhasil diubah
@@ -51,10 +63,15 @@ const router = Router();
  *         $ref: '#/components/responses/PayloadTooLarge'
  *       '422':
  *         $ref: '#/components/responses/ValidationError'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  * /peserta:
  *   get:
  *     tags: [Peserta]
  *     summary: Daftar semua peserta
+ *     description: |
+ *       Mendukung pagination, filter, pengurutan, dan pencarian pada nama atau email.
+ *       Parameter yang tidak valid ditolak dengan 422 (tidak dikoreksi diam-diam).
  *     security: []
  *     parameters:
  *       - $ref: '#/components/parameters/Page'
@@ -63,6 +80,18 @@ const router = Router();
  *       - $ref: '#/components/parameters/Q'
  *       - $ref: '#/components/parameters/Sekolah'
  *       - $ref: '#/components/parameters/Fase'
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [nama, fase, createdAt]
+ *           default: createdAt
+ *       - in: query
+ *         name: sekolah
+ *         schema: { type: string, maxLength: 100 }
+ *       - in: query
+ *         name: fase
+ *         schema: { type: integer, minimum: 1, maximum: 5 }
  *     responses:
  *       '200':
  *         description: Berhasil
@@ -78,6 +107,12 @@ const router = Router();
  *   post:
  *     tags: [Peserta]
  *     summary: Mendaftarkan peserta baru secara manual (khusus mentor)
+ *     description: |
+ *       Khusus mentor. Mendaftarkan peserta atau mentor baru secara manual,
+ *       lengkap dengan role, status, dan fase. Semua field wajib diisi
+ *       kecuali skillIds. Ditolak dengan 409 jika email atau kombinasi
+ *       nama dan sekolah sudah terdaftar. Alamat data baru dikembalikan
+ *       lewat header Location.
  *     requestBody:
  *       required: true
  *       content:
@@ -109,10 +144,16 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  *       '409':
  *         $ref: '#/components/responses/Conflict'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  * /peserta/{id}:
  *   get:
  *     tags: [Peserta]
  *     summary: Data peserta dengan id spesifik (mentor atau pemilik data)
+ *     description: |
+ *       Mengambil data satu peserta berdasarkan id. Mentor boleh melihat
+ *       peserta mana pun, sedangkan peserta hanya boleh melihat datanya
+ *       sendiri.
  *     parameters:
  *       - $ref: '#/components/parameters/IdPath'
  *     responses:
@@ -136,6 +177,11 @@ const router = Router();
  *   put:
  *     tags: [Peserta]
  *     summary: Mengubah seluruh data peserta dengan id spesifik (khusus mentor)
+ *     description: |
+ *       Khusus mentor. Mengganti seluruh data peserta, jadi semua field
+ *       wajib dikirim ulang. Gunakan PATCH jika hanya ingin mengubah
+ *       sebagian field. Ditolak dengan 409 jika email atau kombinasi
+ *       nama dan sekolah bentrok dengan peserta lain.
  *     parameters:
  *       - $ref: '#/components/parameters/IdPath'
  *     requestBody:
@@ -166,9 +212,15 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  *       '409':
  *         $ref: '#/components/responses/Conflict'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  *   patch:
  *     tags: [Peserta]
  *     summary: Mengubah sebagian data peserta dengan id spesifik (khusus mentor)
+ *     description: |
+ *       Khusus mentor. Mengubah sebagian data peserta, hanya field yang
+ *       dikirim yang berubah. Ditolak dengan 409 jika email atau kombinasi
+ *       nama dan sekolah bentrok dengan peserta lain.
  *     parameters:
  *       - $ref: '#/components/parameters/IdPath'
  *     requestBody:
@@ -197,9 +249,15 @@ const router = Router();
  *         $ref: '#/components/responses/PayloadTooLarge'
  *       '422':
  *         $ref: '#/components/responses/ValidationError'
+ *       '400':
+ *         $ref: '#/components/responses/InvalidJson'
  *   delete:
  *     tags: [Peserta]
  *     summary: Menghapus peserta dengan id spesifik (khusus mentor)
+ *     description: |
+ *       Khusus mentor. Menghapus peserta secara permanen. Berhasil
+ *       dengan status 204 tanpa body, dan data yang sudah dihapus tidak
+ *       bisa dipulihkan lewat API.
  *     parameters:
  *       - $ref: '#/components/parameters/IdPath'
  *     responses:
@@ -216,10 +274,20 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  *       '404':
  *         $ref: '#/components/responses/NotFound'
+ *       '409':
+ *         description: Peserta masih punya data terkait (mis. jurnal) sehingga tidak bisa dihapus
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  * /peserta/{id}/jurnal:
  *   get:
  *     tags: [Peserta]
  *     summary: Data peserta beserta jurnalnya (hanya pemilik dan mentor yang bisa melihat)
+ *     description: |
+ *       Mengambil data peserta beserta seluruh jurnalnya dalam satu
+ *       response (jurnalList). Hanya pemilik data dan mentor yang boleh mengakses;
+ *       pengguna lain mendapat 403.
  *     parameters:
  *       - $ref: '#/components/parameters/IdPath'
  *     responses:
