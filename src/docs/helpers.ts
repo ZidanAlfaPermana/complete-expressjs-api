@@ -4,6 +4,7 @@ export const ref = (nama: string) => ({ $ref: `#/components/schemas/${nama}` });
 // Pembungkus response sukses tunggal: { sukses, pesan, data }
 export const bungkusSukses = (data: object) => ({
     type: "object",
+    required: ["sukses", "pesan", "data"],
     properties: {
         sukses: { type: "boolean", example: true },
         pesan: { type: "string", example: "Berhasil" },
@@ -11,9 +12,9 @@ export const bungkusSukses = (data: object) => ({
     },
 });
 
-// Pembungkus response daftar: { sukses, pesan, data[], meta }
 export const bungkusDaftar = (item: object) => ({
     type: "object",
+    required: ["sukses", "pesan", "data", "meta"],
     properties: {
         sukses: { type: "boolean", example: true },
         pesan: { type: "string", example: "Berhasil" },

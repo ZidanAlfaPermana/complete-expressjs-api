@@ -63,6 +63,7 @@ export const components = {
     schemas: {
         PaginationMeta: {
             type: "object",
+            required: ["page", "limit", "total", "totalPages", "hasNext", "hasPrev"],
             properties: {
                 page: { type: "integer", example: 1 },
                 limit: { type: "integer", example: 10 },
@@ -75,6 +76,7 @@ export const components = {
 
         FieldError: {
             type: "object",
+            required: ["field", "pesan"],
             properties: {
                 field: { type: "string", example: "email", description: "Nama field; notasi titik untuk objek bersarang (lampiran.1.url)" },
                 pesan: { type: "string", example: "Format email tidak valid" },
@@ -83,6 +85,7 @@ export const components = {
 
         ErrorResponse: {
             type: "object",
+            required: ["sukses", "error"],
             properties: {
                 sukses: { type: "boolean", example: false },
                 error: {
@@ -101,6 +104,7 @@ export const components = {
 
         Peserta: {
             type: "object",
+            required: ["id", "nama", "sekolah", "email", "fase", "status", "role", "createdAt"],
             properties: {
                 id: { type: "integer", readOnly: true, example: 1 },
                 nama: { type: "string", example: "Budi Santoso" },
@@ -204,6 +208,7 @@ export const components = {
 
         Jurnal: {
             type: "object",
+            required: ["id", "pesertaId", "kegiatan", "rencanaBesok", "statusReview", "createdAt"],
             properties: {
                 id: { type: "integer", readOnly: true, example: 1 },
                 pesertaId: { type: "integer", readOnly: true, example: 3 },
@@ -279,6 +284,7 @@ export const components = {
         JurnalAndPesertaResponse: bungkusSukses(ref("JurnalAndPeserta")),
         LoginResponse: bungkusSukses({
             type: "object",
+            required: ["accessToken", "refreshToken", "peserta"],
             properties: {
                 accessToken: { type: "string", description: "Berlaku 15 menit" },
                 refreshToken: { type: "string", description: "Berlaku 7 hari, tukarkan di /refresh" },
@@ -287,12 +293,14 @@ export const components = {
         }),
         RefreshResponse: bungkusSukses({
             type: "object",
+            required: ["accessToken"],
             properties: {
                 accessToken: { type: "string", description: "Berlaku 15 menit" },
             },
         }),
         PesanResponse: {
             type: "object",
+            required: ["sukses", "pesan"],
             properties: {
                 sukses: { type: "boolean", example: true },
                 pesan: { type: "string", example: "Berhasil" },

@@ -217,6 +217,14 @@
     "schemas": {
       "PaginationMeta": {
         "type": "object",
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "totalPages",
+          "hasNext",
+          "hasPrev"
+        ],
         "properties": {
           "page": {
             "type": "integer",
@@ -246,6 +254,10 @@
       },
       "FieldError": {
         "type": "object",
+        "required": [
+          "field",
+          "pesan"
+        ],
         "properties": {
           "field": {
             "type": "string",
@@ -260,6 +272,10 @@
       },
       "ErrorResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "error"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -307,6 +323,16 @@
       },
       "Peserta": {
         "type": "object",
+        "required": [
+          "id",
+          "nama",
+          "sekolah",
+          "email",
+          "fase",
+          "status",
+          "role",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -589,6 +615,14 @@
       },
       "Jurnal": {
         "type": "object",
+        "required": [
+          "id",
+          "pesertaId",
+          "kegiatan",
+          "rencanaBesok",
+          "statusReview",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -759,6 +793,11 @@
       },
       "PesertaResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -775,6 +814,12 @@
       },
       "PesertaListResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data",
+          "meta"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -797,6 +842,11 @@
       },
       "JurnalResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -813,6 +863,12 @@
       },
       "JurnalListResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data",
+          "meta"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -835,6 +891,11 @@
       },
       "JurnalAndPesertaResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -851,6 +912,11 @@
       },
       "LoginResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -862,6 +928,11 @@
           },
           "data": {
             "type": "object",
+            "required": [
+              "accessToken",
+              "refreshToken",
+              "peserta"
+            ],
             "properties": {
               "accessToken": {
                 "type": "string",
@@ -880,6 +951,11 @@
       },
       "RefreshResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan",
+          "data"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -891,6 +967,9 @@
           },
           "data": {
             "type": "object",
+            "required": [
+              "accessToken"
+            ],
             "properties": {
               "accessToken": {
                 "type": "string",
@@ -902,6 +981,10 @@
       },
       "PesanResponse": {
         "type": "object",
+        "required": [
+          "sukses",
+          "pesan"
+        ],
         "properties": {
           "sukses": {
             "type": "boolean",
